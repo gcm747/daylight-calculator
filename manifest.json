@@ -2,6 +2,7 @@
   "name": "Daylight Calculator",
   "short_name": "Daylight",
   "description": "Sunrise, sunset, twilight, day length and solstice tracking for any location on Earth.",
+  "id": "/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
