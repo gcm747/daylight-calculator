@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daylight Calculator — Sunrise, Sunset &amp; Solstice Tracker</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16233E">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky:#F3F7FA;
+    --paper:#FFFFFF;
+    --ink:#16233E;
+    --slate:#5C6B85;
+    --gold:#E8A33D;
+    --coral:#E85D4C;
+    --azure:#3D8FD1;
+    --line:#DCE6EE;
+    --font-display:'Bricolage Grotesque', Georgia, serif;
+    --font-body:'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono:var(--font-body);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:linear-gradient(160deg, #FCF3DE, #EAF4FB);
+    color:var(--ink);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    padding:28px 16px 60px;
+    transition:background 0.6s ease;
+  }
+  /* Six phase-of-day backgrounds — day uses the base rule above. */
+  body[data-weather="dawn"]{ background:linear-gradient(160deg, #6E6485, #313A66); }
+  body[data-weather="sunrise"]{ background:linear-gradient(160deg, #FBD9B8, #DCEBF5); }
+  body[data-weather="sunset"]{ background:linear-gradient(160deg, #F6C589, #D8E2F0); }
+  body[data-weather="dusk"]{ background:linear-gradient(160deg, #8C6270, #313A66); }
+  body[data-weather="night"]{ background:linear-gradient(160deg, #3A4470, #1B2140); }
+  /* Dark backgrounds (night, dawn, dusk) need light text — driven by
+     data-tone rather than repeating a rule per key. */
+  body[data-tone="dark"] .eyebrow,
+  body[data-tone="dark"] .subtitle{ color:#D6D3E6; }
+  body[data-tone="dark"] h1{ color:#F7F6FB; }
+  .instrument{
+    max-width:640px;
+    margin:0 auto;
+  }
+  header{margin-bottom:24px; text-align:center;}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--slate);
+    text-transform:uppercase;
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:42px;
+    line-height:1.02;
+    margin:0 0 8px;
+    letter-spacing:-0.02em;
+  }
+  .subtitle{
+    color:var(--slate);
+    font-size:15px;
+    line-height:1.5;
+    margin:0 auto;
+    max-width:46ch;
+  }
+  .weather-hero{
+    margin:16px auto 0;
+    max-width:440px;
+    border-radius:20px;
+    overflow:hidden;
+    border:1px solid var(--line);
+    box-shadow:0 1px 3px rgba(22,35,62,0.08);
+    aspect-ratio:340/160;
+  }
+  .weather-hero[hidden]{display:none;}
+  .weather-hero svg{display:block; width:100%; height:100%;}
+
+  section{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px;
+    margin-top:14px;
+  }
+
+  .controls{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px 14px;
+  }
+  .field{display:flex; flex-direction:column; gap:6px;}
+  .field.full{grid-column:1 / -1;}
+  label{
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--slate);
+  }
+  input[type=number], input[type=date]{
+    font-family:var(--font-mono);
+    font-variant-numeric:tabular-nums;
+    font-size:16px;
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:9px 10px;
+    background:var(--sky);
+    width:100%;
+  }
+  input:focus{
+    outline:2px solid var(--gold);
+    outline-offset:1px;
+  }
+  button{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:13px;
+    color:var(--ink);
+    background:var(--sky);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:9px 12px;
+    cursor:pointer;
+  }
+  button:hover{border-color:var(--gold);}
+  button:active{transform:translateY(1px);}
+  #locate{grid-column:1 / -1;}
+  .locate-btn{
+    background:var(--azure);
+    border-color:var(--azure);
+    color:#FFFFFF;
+    font-size:14px;
+    font-weight:700;
+    padding:12px;
+    border-radius:10px;
+  }
+  .locate-btn:hover{background:#2E76B3; border-color:#2E76B3;}
+  .location-confirm{
+    grid-column:1 / -1;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--sky);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:9px 12px;
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  .location-confirm[hidden]{display:none;}
+  .place-search-row{
+    display:flex;
+    gap:8px;
+  }
+  .place-search-row input[type=text]{
+    flex:1;
+    min-width:0;
+    font-family:var(--font-body);
+    font-size:16px;
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:9px 10px;
+    background:var(--sky);
+  }
+  .place-results{
+    grid-column:1 / -1;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    background:var(--sky);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:6px;
+  }
+  .place-results[hidden]{display:none;}
+  .place-option{
+    text-align:left;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:8px 10px;
+    font-size:13.5px;
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .place-option:hover{border-color:var(--gold);}
+  .field-caption{
+    font-size:12px;
+    color:var(--slate);
+    margin:0 0 6px;
+  }
+  .favorites-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+  }
+  .fav-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:9px 2px;
+    border-bottom:1px solid var(--line);
+  }
+  .fav-row:last-child{border-bottom:none;}
+  .fav-name{
+    flex:1;
+    min-width:0;
+    text-align:left;
+    font-size:13.5px;
+    color:var(--ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .fav-row.empty .fav-name{
+    color:var(--slate);
+    font-style:italic;
+  }
+  .fav-remove{
+    flex:none;
+    font-size:14px;
+    line-height:1;
+    color:var(--slate);
+    padding:4px 4px 4px 8px;
+  }
+  .fav-remove:hover{color:var(--coral);}
+  .coords-fields{
+    grid-column:1 / -1;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px 14px;
+    margin-top:0;
+  }
+  .date-bubble{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--sky);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:9px 10px;
+  }
+  .date-bubble input[type=date]{
+    flex:none;
+    width:auto;
+    border:none;
+    background:transparent;
+    padding:0;
+    font-family:var(--font-mono);
+    font-variant-numeric:tabular-nums;
+    font-size:16px;
+    color:var(--ink);
+  }
+  .location-clock{
+    flex:none;
+    font-family:var(--font-mono);
+    font-variant-numeric:tabular-nums;
+    font-size:15px;
+    color:var(--ink);
+    white-space:nowrap;
+    padding-left:10px;
+    margin-left:10px;
+    border-left:1px solid var(--line);
+  }
+  .dst-status{
+    font-size:12px;
+    color:var(--slate);
+    margin:8px 0 0;
+  }
+  .dst-status.active{color:var(--azure); font-weight:600;}
+  .status{
+    grid-column:1 / -1;
+    font-size:12px;
+    color:var(--slate);
+  }
+  .status:empty{display:none;}
+
+  .visual{padding:14px 12px 8px;}
+  svg{display:block; width:100%; height:auto;}
+  .chart-head{margin-bottom:2px;}
+  .chart-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:16px;
+  }
+  .chart-legend{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+    margin:6px 0 4px;
+  }
+  .legend-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    color:var(--slate);
+  }
+  .legend-swatch{
+    width:18px;
+    height:0;
+    border-top:2.5px solid;
+    flex:none;
+  }
+  .legend-swatch.dashed{border-top-style:dashed;}
+  .swatch-today{border-color:var(--coral);}
+  .swatch-longest{border-color:var(--gold);}
+  .swatch-shortest{border-color:var(--ink);}
+
+  .timeline-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:2px;
+  }
+  .timeline-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:16px;
+  }
+  .timeline-list{
+    list-style:none;
+    margin:6px 0 0;
+    padding:0;
+  }
+  .timeline-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:7px 6px;
+    border-bottom:1px solid var(--line);
+    font-size:13.5px;
+  }
+  .timeline-row:last-child{border-bottom:none;}
+  .tl-label{display:flex; align-items:center; gap:9px; color:var(--ink);}
+  .tl-value{font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:14px; color:var(--ink);}
+  .tl-dot{width:8px; height:8px; border-radius:50%; flex:none;}
+  .dot-civil{background:var(--coral);}
+  .dot-sun{background:var(--gold);}
+
+  .yearpos-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+    flex-wrap:wrap;
+  }
+  .phase-pill{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--ink);
+  }
+  .phase-pill.lengthening{color:#3F8557;}
+  .phase-pill.shortening{color:#B84A3F;}
+  #daily-change{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--slate);
+  }
+  .yearpos-line{
+    font-size:14.5px;
+    line-height:1.55;
+    margin:0 0 14px;
+  }
+  .yearpos-line strong{color:var(--ink);}
+  .progress-track{
+    position:relative;
+    height:8px;
+    background:var(--sky);
+    border:1px solid var(--line);
+    border-radius:4px;
+    margin:6px 4px 18px;
+  }
+  .progress-fill{
+    position:absolute;
+    left:0; top:-1px; bottom:-1px;
+    border-radius:4px;
+  }
+  .progress-fill.lengthening{background:#3F8557;}
+  .progress-fill.shortening{background:#B84A3F;}
+  .progress-equinox{
+    position:absolute;
+    top:-4px;
+    width:2px; height:16px;
+    background:var(--slate);
+    transform:translateX(-50%);
+  }
+  .yearpos-sub{
+    font-size:12.5px;
+    color:var(--slate);
+    margin:0;
+  }
+  #equinox-line{text-align:center;}
+
+  footer{
+    text-align:center;
+    margin-top:20px;
+  }
+  footer p{
+    font-size:11.5px;
+    color:var(--slate);
+    margin:0;
+  }
+</style>
+</head>
+<body>
+<div class="instrument">
+
+  <header>
+    <p class="eyebrow">Sunrise, sunset &amp; solstice tracker</p>
+    <h1>Daylight Calculator</h1>
+    <p class="subtitle">Enter any place and date to see sunrise, sunset and twilight, how long the day is, and where you sit between the shortest and longest day of the year.</p>
+    <div class="weather-hero" id="weather-hero" hidden>
+      <svg id="weather-scene" viewBox="0 0 340 160" preserveAspectRatio="xMidYMid slice"></svg>
+    </div>
+  </header>
+
+  <section class="controls">
+    <button id="locate" type="button" class="locate-btn">Use My Location</button>
+    <p class="status" id="status"></p>
+    <div class="location-confirm" id="location-confirm" hidden>
+      <span id="location-name">—</span>
+    </div>
+
+    <div class="field full">
+      <label for="place-search">Search for a place</label>
+      <div class="place-search-row">
+        <input type="text" id="place-search" placeholder="e.g. New York">
+        <button id="search-btn" type="button">Search</button>
+      </div>
+    </div>
+    <div class="place-results" id="place-results" hidden></div>
+
+    <div class="field full">
+      <label>Enter coordinates manually</label>
+    </div>
+    <div class="coords-fields">
+      <div class="field">
+        <label for="lat">Latitude</label>
+        <input type="number" id="lat" step="0.0001" placeholder="e.g. -31.9523">
+      </div>
+      <div class="field">
+        <label for="lon">Longitude</label>
+        <input type="number" id="lon" step="0.0001" placeholder="e.g. 115.8613">
+      </div>
+    </div>
+
+    <div class="field full">
+      <label>Favorites</label>
+      <p class="field-caption">Save up to five favorites for quick access.</p>
+      <ul class="favorites-list" id="favorites-list"></ul>
+    </div>
+
+    <div class="field full">
+      <label for="date">Date and Time</label>
+      <p class="field-caption">Select date to adjust it manually.</p>
+      <div class="date-bubble">
+        <input type="date" id="date">
+        <span class="location-clock" id="location-clock">—</span>
+      </div>
+      <p class="dst-status" id="dst-status">—</p>
+    </div>
+  </section>
+
+  <section class="timeline">
+    <div class="timeline-head">
+      <span class="timeline-title">Day Timeline</span>
+      <span class="tl-value" id="daylength">—</span>
+    </div>
+    <ul class="timeline-list">
+      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-civil"></span>First Light</span><span class="tl-value" id="civil-dawn">—</span></li>
+      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-sun"></span>Sunrise</span><span class="tl-value" id="sunrise">—</span></li>
+      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-sun"></span>Midday</span><span class="tl-value" id="midday">—</span></li>
+      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-sun"></span>Sunset</span><span class="tl-value" id="sunset">—</span></li>
+      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-civil"></span>Last Light</span><span class="tl-value" id="civil-dusk">—</span></li>
+    </ul>
+  </section>
+
+  <section class="yearpos">
+    <div class="yearpos-head">
+      <span class="phase-pill" id="phase-pill">—</span>
+      <span id="daily-change">—</span>
+    </div>
+    <p class="yearpos-line" id="yearpos-line">Loading…</p>
+    <p class="yearpos-sub" id="cumulative-line">—</p>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+      <div class="progress-equinox" id="progress-equinox"></div>
+    </div>
+    <p class="yearpos-sub" id="equinox-line">—</p>
+  </section>
+
+  <section class="visual">
+    <div class="chart-head"><span class="chart-title">Daylight Span</span></div>
+    <div class="chart-legend">
+      <span class="legend-item"><span class="legend-swatch swatch-today"></span><span id="legend-today-label">Today</span></span>
+      <span class="legend-item"><span class="legend-swatch dashed swatch-longest"></span>Longest day</span>
+      <span class="legend-item"><span class="legend-swatch dashed swatch-shortest"></span>Shortest day</span>
+    </div>
+    <svg id="chart" viewBox="0 0 600 210" preserveAspectRatio="xMidYMid meet"></svg>
+  </section>
+
+  <footer>
+    <p>Uses standard solar-position approximations — accurate to within a minute or two of sunrise/sunset. All times, including daylight saving, use the location's real timezone data once it has loaded — briefly falling back to a longitude-based estimate while that loads, or if there's no network connection. Solstice/equinox dates are fixed to the day and don't shift for leap years.</p>
+  </footer>
+
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const toRad = d => d * Math.PI / 180;
+  const toDeg = r => r * 180 / Math.PI;
+  const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+
+  function dayOfYear(year, month, day){ // month is 1-indexed
+    const start = Date.UTC(year, 0, 1);
+    const target = Date.UTC(year, month - 1, day);
+    return Math.round((target - start) / 86400000) + 1;
+  }
+
+  // Daily solar facts for a given calendar date + longitude/latitude.
+  // Formulas: NOAA/Spencer(1971) equation-of-time & declination approximations.
+  // Civil twilight uses the standard zenith threshold of 96° (sun 6° below
+  // the horizon) — the most commonly recognized definition of "twilight."
+  function computeDaily(year, month, day, lat, lon){
+    const N = dayOfYear(year, month, day);
+    const gamma = 2 * Math.PI / 365 * (N - 1);
+
+    const eqTime = 229.18 * (
+      0.000075
+      + 0.001868 * Math.cos(gamma)
+      - 0.032077 * Math.sin(gamma)
+      - 0.014615 * Math.cos(2*gamma)
+      - 0.040849 * Math.sin(2*gamma)
+    ); // minutes
+
+    const decl = 0.006918
+      - 0.399912 * Math.cos(gamma)
+      + 0.070257 * Math.sin(gamma)
+      - 0.006758 * Math.cos(2*gamma)
+      + 0.000907 * Math.sin(2*gamma)
+      - 0.002697 * Math.cos(3*gamma)
+      + 0.00148  * Math.sin(3*gamma); // radians
+
+    const latRad = toRad(lat);
+    const solarNoonUTC = 12 - lon/15 - eqTime/60; // decimal UTC hours
+
+    // Returns the two times the sun crosses a given zenith angle either side
+    // of solar noon, or a flag if it never crosses (sun stays above/below
+    // that threshold all day — happens at high latitudes).
+    function crossing(zenithDeg){
+      const zenith = toRad(zenithDeg);
+      const cosH0 = (Math.cos(zenith) - Math.sin(latRad)*Math.sin(decl)) / (Math.cos(latRad)*Math.cos(decl));
+      if (cosH0 > 1)  return { state: 'never-above', startUTC: null, endUTC: null, H0deg: 0 };
+      if (cosH0 < -1) return { state: 'never-below', startUTC: null, endUTC: null, H0deg: 180 };
+      const H0deg = toDeg(Math.acos(cosH0));
+      return { state: null, startUTC: solarNoonUTC - H0deg/15, endUTC: solarNoonUTC + H0deg/15, H0deg };
+    }
+
+    const sun = crossing(90.833);
+    const civil = crossing(96);
+
+    const polar = sun.state === 'never-above' ? 'night' : sun.state === 'never-below' ? 'day' : null;
+    const dayLengthHours = polar === 'day' ? 24 : polar === 'night' ? 0 : 2 * sun.H0deg / 15;
+
+    return {
+      decl, eqTime, solarNoonUTC, year, month, day, polar, dayLengthHours,
+      sunriseUTC: sun.startUTC, sunsetUTC: sun.endUTC,
+      civilDawnUTC: civil.startUTC, civilDuskUTC: civil.endUTC, civilState: civil.state,
+    };
+  }
+
+  function altitudeAt(hourUTC, daily, latRad){
+    const H = toRad((hourUTC - daily.solarNoonUTC) * 15);
+    const sinAlt = Math.sin(latRad)*Math.sin(daily.decl) + Math.cos(latRad)*Math.cos(daily.decl)*Math.cos(H);
+    return toDeg(Math.asin(clamp(sinAlt, -1, 1)));
+  }
+
+  // Approximate the *viewed location's* own standard-time offset from its
+  // longitude (15° of longitude ≈ 1 hour) — used only as a fallback before
+  // real timezone data has arrived (or if it's unavailable), since it
+  // deliberately can't know about daylight saving time on its own.
+  function lonOffsetHours(lon){
+    return Math.round(lon / 15);
+  }
+
+  function toLocationLocalHour(utcHour, lon){
+    return ((utcHour + lonOffsetHours(lon)) % 24 + 24) % 24;
+  }
+
+  // The correct local hour-of-day (decimal, 0–24) for a UTC time on a
+  // specific calendar date. Uses the real IANA timezone fetched for this
+  // location (locationTzName, set in updateHeaderStatus) via the browser's
+  // own timezone database — which correctly resolves daylight saving for
+  // that exact date, not just "right now". Only falls back to the
+  // longitude estimate above if real timezone data isn't available yet
+  // (e.g. briefly on first load, or if the network request failed).
+  function accurateLocalHour(utcHour, lon, year, month, day){
+    if (locationTzName){
+      try {
+        let h = utcHour, dayOffset = 0;
+        if (h < 0) { dayOffset = -1; h += 24; }
+        if (h >= 24) { dayOffset = 1; h -= 24; }
+        const hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+        const utcDate = new Date(Date.UTC(year, month - 1, day + dayOffset, hh, mm));
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: locationTzName,
+          hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false
+        }).formatToParts(utcDate);
+        const get = type => (parts.find(p => p.type === type) || {}).value;
+        let hr = parseInt(get('hour'), 10);
+        if (hr === 24) hr = 0;
+        const min = parseInt(get('minute'), 10), sec = parseInt(get('second'), 10);
+        if (!isNaN(hr) && !isNaN(min)) return hr + min/60 + (isNaN(sec)?0:sec)/3600;
+      } catch (e) { /* fall through to the estimate below */ }
+    }
+    return toLocationLocalHour(utcHour, lon);
+  }
+
+  // Whether a specific date falls inside daylight saving time for this
+  // timezone. Compares that date's UTC offset against January 1 and July 1
+  // of the same year — whichever of those two is more "advanced" is the
+  // DST offset (DST always moves clocks forward relative to standard
+  // time), regardless of hemisphere or which months a region's DST
+  // actually spans. Returns true/false, or null if not yet knowable (no
+  // real timezone resolved yet) or the zone doesn't observe DST at all.
+  function dstInfoFor(year, month, day){
+    if (!locationTzName) return null;
+    function offsetMinutes(y, m, d){
+      const utcDate = new Date(Date.UTC(y, m - 1, d, 12, 0, 0)); // noon UTC avoids date-boundary edge cases
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: locationTzName, timeZoneName: 'shortOffset', hour: '2-digit'
+      }).formatToParts(utcDate);
+      const raw = (parts.find(p => p.type === 'timeZoneName') || {}).value || '';
+      const m2 = raw.match(/GMT([+-])(\d+)(?::(\d+))?/);
+      if (!m2) return null;
+      const sign = m2[1] === '-' ? -1 : 1;
+      return sign * (parseInt(m2[2], 10) * 60 + (m2[3] ? parseInt(m2[3], 10) : 0));
+    }
+    try {
+      const target = offsetMinutes(year, month, day);
+      const jan = offsetMinutes(year, 1, 1);
+      const jul = offsetMinutes(year, 7, 1);
+      if (target == null || jan == null || jul == null) return null;
+      if (jan === jul) return { observesDst: false, active: false };
+      const dstOffset = Math.max(jan, jul);
+      return { observesDst: true, active: target === dstOffset };
+    } catch (e) { return null; }
+  }
+
+  function updateDstStatus(year, month, day){
+    const el = $('dst-status');
+    const info = dstInfoFor(year, month, day);
+    if (!info){
+      el.textContent = '—';
+      el.className = 'dst-status';
+    } else if (!info.observesDst){
+      el.textContent = "This location doesn't observe daylight saving time.";
+      el.className = 'dst-status';
+    } else if (info.active){
+      el.textContent = 'Daylight saving time is in effect for this date.';
+      el.className = 'dst-status active';
+    } else {
+      el.textContent = 'Standard time — no daylight saving for this date.';
+      el.className = 'dst-status';
+    }
+  }
+
+  function fmtClockFromUTC(utcHour, lon, year, month, day){
+    if (utcHour == null) return '—';
+    const h = accurateLocalHour(utcHour, lon, year, month, day);
+    let hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+    if (mm === 60) { mm = 0; hh = (hh + 1) % 24; }
+    const period = hh < 12 ? 'am' : 'pm';
+    const disp = hh % 12 === 0 ? 12 : hh % 12;
+    return disp + ':' + String(mm).padStart(2,'0') + period;
+  }
+
+  // state is null for a normal crossing, or a string ('never-above'/'never-below')
+  // when that twilight band never occurs on this day at this latitude.
+  function fmtTwilight(state, utcVal, lon, year, month, day){
+    if (state) return '—';
+    return fmtClockFromUTC(utcVal, lon, year, month, day);
+  }
+
+  function fmtDayLength(hours){
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return h + 'h ' + m + 'm';
+  }
+
+  function todayLocalParts(){
+    const d = new Date();
+    return { y: d.getFullYear(), m: d.getMonth()+1, d: d.getDate() };
+  }
+
+  function todayLocalISO(){
+    const t = todayLocalParts();
+    return t.y + '-' + String(t.m).padStart(2,'0') + '-' + String(t.d).padStart(2,'0');
+  }
+
+  // ---- Position within the solar year (solstice-to-solstice) ----
+  const YEAR_EVENTS = [
+    { month:3,  day:20, type:'equinox',  label:'March equinox' },
+    { month:6,  day:21, type:'solstice', label:'June solstice' },
+    { month:9,  day:22, type:'equinox',  label:'September equinox' },
+    { month:12, day:21, type:'solstice', label:'December solstice' },
+  ];
+
+  function eventsAround(year){
+    let list = [];
+    [year-1, year, year+1].forEach(yy => {
+      YEAR_EVENTS.forEach(e => {
+        list.push({ date: new Date(Date.UTC(yy, e.month-1, e.day)), type: e.type, label: e.label });
+      });
+    });
+    list.sort((a,b) => a.date - b.date);
+    return list;
+  }
+
+  // Which solstice-to-solstice half we're in, whether days are lengthening or
+  // shortening (hemisphere-aware, from the sign of latitude), and where the
+  // equinox falls within that half.
+  function solarYearPosition(y, m, d, lat){
+    const target = new Date(Date.UTC(y, m-1, d));
+    const events = eventsAround(y);
+    const solstices = events.filter(e => e.type === 'solstice');
+    let prevSolstice = null, nextSolstice = null;
+    for (let i=0; i<solstices.length; i++){
+      if (solstices[i].date <= target) prevSolstice = solstices[i];
+      if (solstices[i].date > target && !nextSolstice) nextSolstice = solstices[i];
+    }
+    const equinox = events.find(e => e.type === 'equinox' && e.date > prevSolstice.date && e.date < nextSolstice.date);
+
+    const isNorthern = lat >= 0;
+    const decToJun = prevSolstice.label === 'December solstice';
+    const growing = isNorthern ? decToJun : !decToJun; // true => days lengthening
+
+    const totalDays = Math.round((nextSolstice.date - prevSolstice.date) / 86400000);
+    const elapsedDays = Math.round((target - prevSolstice.date) / 86400000);
+    const remainingDays = totalDays - elapsedDays;
+    const daysToEquinox = Math.round((equinox.date - target) / 86400000);
+
+    return {
+      growing,
+      startLabel: growing ? 'winter' : 'summer',
+      endLabel: growing ? 'summer' : 'winter',
+      elapsedDays, totalDays, remainingDays,
+      equinoxLabel: equinox.label,
+      daysToEquinox,
+      progressFraction: elapsedDays / totalDays,
+      equinoxFraction: (equinox.date - prevSolstice.date) / (nextSolstice.date - prevSolstice.date),
+      prevSolsticeY: prevSolstice.date.getUTCFullYear(),
+      prevSolsticeM: prevSolstice.date.getUTCMonth() + 1,
+      prevSolsticeD: prevSolstice.date.getUTCDate(),
+    };
+  }
+
+  function dailyChangeSeconds(y, m, d, lat, lon){
+    const todayLen = computeDaily(y, m, d, lat, lon).dayLengthHours;
+    const prevDateObj = new Date(Date.UTC(y, m-1, d) - 86400000);
+    const py = prevDateObj.getUTCFullYear(), pm = prevDateObj.getUTCMonth()+1, pd = prevDateObj.getUTCDate();
+    const prevLen = computeDaily(py, pm, pd, lat, lon).dayLengthHours;
+    return (todayLen - prevLen) * 3600; // seconds
+  }
+
+  // Total daylight gained (or lost) between the start-of-half solstice and
+  // the selected date — the cumulative counterpart to the daily rate above.
+  function cumulativeChangeSeconds(y, m, d, lat, lon, pos){
+    const solsticeLen = computeDaily(pos.prevSolsticeY, pos.prevSolsticeM, pos.prevSolsticeD, lat, lon).dayLengthHours;
+    const currentLen = computeDaily(y, m, d, lat, lon).dayLengthHours;
+    return (currentLen - solsticeLen) * 3600; // seconds
+  }
+
+  function fmtDuration(seconds){
+    const abs = Math.abs(seconds);
+    const h = Math.floor(abs / 3600);
+    const mins = Math.round((abs % 3600) / 60);
+    return (h > 0 ? h + 'h ' : '') + mins + 'm';
+  }
+
+  function updateYearPosition(y, m, d, lat, lon, isToday){
+    const pos = solarYearPosition(y, m, d, lat);
+
+    const pill = $('phase-pill');
+    pill.textContent = pos.growing ? 'Days are Lengthening ↑' : 'Days are Shortening ↓';
+    pill.className = 'phase-pill ' + (pos.growing ? 'lengthening' : 'shortening');
+
+    $('yearpos-line').innerHTML = 'Day ' + pos.elapsedDays + ' since the <strong>' + pos.startLabel +
+      ' solstice</strong> — ' + pos.remainingDays + ' days until the <strong>' + pos.endLabel + ' solstice</strong>.';
+
+    const cumSec = cumulativeChangeSeconds(y, m, d, lat, lon, pos);
+    const cumVerb = pos.growing ? "You've gained" : "You've lost";
+    $('cumulative-line').textContent = cumVerb + ' ' + fmtDuration(cumSec) + ' of daylight since the ' + pos.startLabel + ' solstice.';
+
+    let eqText;
+    if (pos.daysToEquinox > 0){
+      eqText = pos.daysToEquinox + (pos.daysToEquinox===1?' day':' days') + ' until the ' + pos.equinoxLabel + ' — the midpoint, when day and night are equal.';
+    } else if (pos.daysToEquinox < 0){
+      eqText = Math.abs(pos.daysToEquinox) + (pos.daysToEquinox===-1?' day':' days') + ' since the ' + pos.equinoxLabel + '.';
+    } else {
+      eqText = 'Today is the ' + pos.equinoxLabel + ' — day and night are equal.';
+    }
+    $('equinox-line').textContent = eqText;
+
+    const frac = clamp(pos.progressFraction, 0, 1) * 100;
+    $('progress-fill').style.width = frac + '%';
+    $('progress-fill').className = 'progress-fill ' + (pos.growing ? 'lengthening' : 'shortening');
+    $('progress-equinox').style.left = (clamp(pos.equinoxFraction, 0, 1) * 100) + '%';
+
+    const deltaSec = dailyChangeSeconds(y, m, d, lat, lon);
+    const absSec = Math.abs(deltaSec);
+    const mm = Math.floor(absSec/60), ss = Math.round(absSec%60);
+    const verb = deltaSec >= 0 ? 'Gained' : 'Lost';
+    const when = isToday ? 'today' : 'on this day';
+    let changeText = verb + ' ' + (mm>0 ? mm+'m ':'') + ss + 's of daylight ' + when;
+    if (Math.abs(lat) < 5) changeText += ' (near the equator, this barely changes)';
+    $('daily-change').textContent = changeText;
+  }
+
+  // ---- Daylight span chart: overlaid sun-path arcs ----
+  // Plots the sun's altitude across the day as a curve (as before), but now
+  // draws it three times on one shared clock-time axis: the selected day as
+  // a solid filled hero arc, with the longest and shortest days of the year
+  // as thin dashed reference arcs behind it. Width shows day length, height
+  // shows how high the sun climbs — both extremes visible in one shape.
+  const svgNS = 'http://www.w3.org/2000/svg';
+  function buildComparisonChart(currentDaily, longestDaily, shortestDaily, lat, lon, isToday){
+    const svg = $('chart');
+    svg.innerHTML = '';
+    const W = 600, PADX = 24;
+    const plotLeft = PADX, plotRight = W - PADX, plotWidth = plotRight - plotLeft;
+    const baseline = 158, plotH = 118, axisTop = 22, tickLabelY = baseline + 20;
+    const latRad = toRad(lat);
+
+    $('legend-today-label').textContent = isToday ? 'Today' : 'Selected day';
+
+    function localSpan(d){
+      if (d.polar) return null;
+      return {
+        rise: accurateLocalHour(d.sunriseUTC, lon, d.year, d.month, d.day),
+        set:  accurateLocalHour(d.sunsetUTC, lon, d.year, d.month, d.day),
+      };
+    }
+    // Axis bounds from the longest day — its rise/set are the earliest
+    // sunrise and latest sunset of the year, so every other day's arc fits
+    // comfortably inside this window.
+    const longSpan = localSpan(longestDaily);
+    const earliestRise = longSpan ? longSpan.rise : 6;
+    const latestSet = longSpan ? longSpan.set : 18;
+    let axisMin = Math.max(0, Math.floor(earliestRise) - 1);
+    let axisMax = Math.min(24, Math.ceil(latestSet) + 1);
+    if (axisMax - axisMin < 4) axisMax = Math.min(24, axisMin + 4);
+
+    const xFor = h => plotLeft + (h - axisMin) / (axisMax - axisMin) * plotWidth;
+    const yFor = alt => baseline - (alt / 90) * plotH;
+
+    function svgEl(tag, attrs, text){
+      const el = document.createElementNS(svgNS, tag);
+      for (const k in attrs) el.setAttribute(k, attrs[k]);
+      if (text != null) el.textContent = text;
+      svg.appendChild(el);
+      return el;
+    }
+
+    // Native SVG animation (SMIL) rather than CSS — far more consistently
+    // supported across WebKit versions for animating SVG-specific
+    // properties like stroke-dashoffset and radius.
+    function animateAttr(el, attrName, from, to, dur, repeat){
+      const anim = document.createElementNS(svgNS, 'animate');
+      anim.setAttribute('attributeName', attrName);
+      anim.setAttribute('from', from);
+      anim.setAttribute('to', to);
+      anim.setAttribute('dur', dur);
+      anim.setAttribute(repeat ? 'repeatCount' : 'fill', repeat ? 'indefinite' : 'freeze');
+      el.appendChild(anim);
+    }
+
+    // Shared <defs>: an atmospheric dawn-to-dusk backdrop gradient (always
+    // present) plus the hero arc's fill gradient (added below if the day
+    // has a normal sunrise/sunset).
+    const defs = document.createElementNS(svgNS, 'defs');
+    defs.innerHTML = '<linearGradient id="skyBg" x1="0" y1="0" x2="1" y2="0">' +
+      '<stop offset="0%" stop-color="#F4C77A" stop-opacity="0.22"/>' +
+      '<stop offset="28%" stop-color="#CFE3F2" stop-opacity="0.32"/>' +
+      '<stop offset="50%" stop-color="#BFE0F5" stop-opacity="0.38"/>' +
+      '<stop offset="74%" stop-color="#CFE3F2" stop-opacity="0.28"/>' +
+      '<stop offset="100%" stop-color="#E8A0A0" stop-opacity="0.22"/>' +
+      '</linearGradient>';
+    svg.appendChild(defs);
+    const bgRect = svgEl('rect', { x:plotLeft, y:axisTop, width:plotWidth, height:baseline-axisTop, fill:'url(#skyBg)', opacity:0 });
+    animateAttr(bgRect, 'opacity', 0, 1, '0.7s');
+
+    // hour gridlines
+    const range = axisMax - axisMin;
+    const step = range <= 8 ? 1 : range <= 16 ? 2 : 3;
+    for (let h = Math.ceil(axisMin/step)*step; h <= axisMax; h += step){
+      const x = xFor(h);
+      svgEl('line', { x1:x, x2:x, y1:axisTop, y2:baseline, stroke:'#EAF0F5', 'stroke-width':1 });
+      const hh = Math.round(h) % 24;
+      const disp = (hh % 12 === 0) ? 12 : hh % 12;
+      svgEl('text', {
+        x, y: tickLabelY, 'text-anchor':'middle', 'font-family':"'Space Grotesk', sans-serif", 'font-variant-numeric':'tabular-nums',
+        'font-size':10, fill:'#5C6B85'
+      }, disp + (hh < 12 ? 'am' : 'pm'));
+    }
+
+    svgEl('line', { x1:plotLeft, x2:plotRight, y1:baseline, y2:baseline, stroke:'#DCE6EE', 'stroke-width':1.5 });
+
+    function arcPoints(daily, steps){
+      if (daily.polar) return null;
+      let pts = [];
+      for (let i=0; i<=steps; i++){
+        const hr = daily.sunriseUTC + (daily.sunsetUTC - daily.sunriseUTC) * (i/steps);
+        const alt = altitudeAt(hr, daily, latRad);
+        const localHr = accurateLocalHour(hr, lon, daily.year, daily.month, daily.day);
+        pts.push([xFor(localHr), yFor(alt)]);
+      }
+      return pts;
+    }
+    const pathFromPts = pts => 'M ' + pts.map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' L ');
+
+    // reference arcs (behind the hero arc), fading in together
+    const shortPts = arcPoints(shortestDaily, 40);
+    if (shortPts){
+      const el = svgEl('path', { d:pathFromPts(shortPts), fill:'none', stroke:'#16233E', 'stroke-width':2, 'stroke-dasharray':'4 4', opacity:0 });
+      animateAttr(el, 'opacity', 0, 0.55, '0.7s');
+    }
+    const longPts = arcPoints(longestDaily, 40);
+    if (longPts){
+      const el = svgEl('path', { d:pathFromPts(longPts), fill:'none', stroke:'#E8A33D', 'stroke-width':2, 'stroke-dasharray':'4 4', opacity:0 });
+      animateAttr(el, 'opacity', 0, 0.7, '0.7s');
+    }
+
+    // hero arc: the selected day, filled, drawn in as an animated stroke
+    const curPts = arcPoints(currentDaily, 50);
+    if (curPts){
+      const fillGrad = document.createElementNS(svgNS, 'linearGradient');
+      fillGrad.setAttribute('id', 'curfill');
+      fillGrad.setAttribute('x1', '0'); fillGrad.setAttribute('y1', '0');
+      fillGrad.setAttribute('x2', '0'); fillGrad.setAttribute('y2', '1');
+      fillGrad.innerHTML = '<stop offset="0%" stop-color="#E85D4C" stop-opacity="0.25"/>' +
+        '<stop offset="100%" stop-color="#E85D4C" stop-opacity="0.02"/>';
+      defs.appendChild(fillGrad);
+
+      const line = pathFromPts(curPts);
+      const first = curPts[0], last = curPts[curPts.length - 1];
+      const fillD = line + ' L ' + last[0].toFixed(1) + ',' + baseline + ' L ' + first[0].toFixed(1) + ',' + baseline + ' Z';
+
+      const fillEl = svgEl('path', { d:fillD, fill:'url(#curfill)', opacity:0 });
+      animateAttr(fillEl, 'opacity', 0, 1, '0.7s');
+
+      // Estimate the path's on-screen length from its sample points (avoids
+      // relying on getTotalLength(), which some mobile WebKit builds handle
+      // inconsistently) so the dash-draw animation is reliable everywhere.
+      let len = 0;
+      for (let i = 1; i < curPts.length; i++){
+        len += Math.hypot(curPts[i][0]-curPts[i-1][0], curPts[i][1]-curPts[i-1][1]);
+      }
+      const heroLine = svgEl('path', {
+        d:line, fill:'none', stroke:'#E85D4C', 'stroke-width':2.5, 'stroke-linecap':'round',
+        'stroke-dasharray':len, 'stroke-dashoffset':len
+      });
+      animateAttr(heroLine, 'stroke-dashoffset', len, 0, '1.1s');
+
+      if (isToday){
+        const now = new Date();
+        const utcHoursNow = now.getUTCHours() + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600;
+        if (utcHoursNow >= currentDaily.sunriseUTC && utcHoursNow <= currentDaily.sunsetUTC){
+          const altNow = altitudeAt(utcHoursNow, currentDaily, latRad);
+          const localHrNow = accurateLocalHour(utcHoursNow, lon, currentDaily.year, currentDaily.month, currentDaily.day);
+          const cx = xFor(localHrNow), cy = yFor(altNow);
+          const ring = svgEl('circle', { cx, cy, r:5, fill:'none', stroke:'#E85D4C', 'stroke-width':2, opacity:0.55 });
+          animateAttr(ring, 'r', 5, 18, '2.2s', true);
+          animateAttr(ring, 'opacity', 0.55, 0, '2.2s', true);
+          svgEl('circle', { cx, cy, r:6, fill:'#E85D4C', stroke:'#FFFFFF', 'stroke-width':2 });
+        }
+      }
+    } else {
+      svgEl('text', {
+        x: W/2, y: baseline - 20, 'text-anchor':'middle', 'font-family':"'Space Grotesk', sans-serif",
+        'font-size':11, fill:'#5C6B85'
+      }, currentDaily.polar === 'day' ? 'Sun up all day' : 'Sun does not rise');
+    }
+  }
+
+  // ---- Main update ----
+  function update(){
+    const lat = parseFloat($('lat').value);
+    const lon = parseFloat($('lon').value);
+    if (!$('date').value){
+      $('date').value = todayLocalISO();
+    }
+    const [y,m,d] = $('date').value.split('-').map(Number);
+    if (isNaN(lat) || isNaN(lon) || !y) return;
+
+    const daily = computeDaily(y, m, d, lat, lon);
+    const today = todayLocalParts();
+    const isToday = (y === today.y && m === today.m && d === today.d);
+
+    $('daylength').textContent = daily.polar === 'night' ? '0h 0m' : daily.polar === 'day' ? '24h 0m' : fmtDayLength(daily.dayLengthHours);
+
+    $('sunrise').textContent = daily.polar ? '—' : fmtClockFromUTC(daily.sunriseUTC, lon, y, m, d);
+    $('midday').textContent = fmtClockFromUTC(daily.solarNoonUTC, lon, y, m, d);
+    $('sunset').textContent  = daily.polar ? '—' : fmtClockFromUTC(daily.sunsetUTC, lon, y, m, d);
+
+    $('civil-dawn').textContent = fmtTwilight(daily.civilState, daily.civilDawnUTC, lon, y, m, d);
+    $('civil-dusk').textContent = fmtTwilight(daily.civilState, daily.civilDuskUTC, lon, y, m, d);
+
+    const isNorthern = lat >= 0;
+    const shortestMD = isNorthern ? { month:12, day:21 } : { month:6, day:21 };
+    const longestMD  = isNorthern ? { month:6, day:21 }  : { month:12, day:21 };
+    const shortestDaily = computeDaily(y, shortestMD.month, shortestMD.day, lat, lon);
+    const longestDaily  = computeDaily(y, longestMD.month, longestMD.day, lat, lon);
+
+    buildComparisonChart(daily, longestDaily, shortestDaily, lat, lon, isToday);
+    updateYearPosition(y, m, d, lat, lon, isToday);
+    updateLocationClock();
+    updateDstStatus(y, m, d);
+  }
+
+  $('date').value = todayLocalISO();
+  ['lat','lon','date'].forEach(id => $(id).addEventListener('input', update));
+  ['change','blur'].forEach(evt => $('date').addEventListener(evt, update));
+
+  // Client-side reverse geocoding (no API key needed) to confirm the city
+  // name for a given lat/lon. Falls back gracefully if it fails.
+  async function reverseGeocode(lat, lon){
+    const url = 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lon + '&localityLanguage=en';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('reverse geocode failed');
+    const data = await res.json();
+    const city = data.city || data.locality || data.principalSubdivision || 'your location';
+    return [city, data.principalSubdivision, data.countryName].filter(Boolean).join(', ');
+  }
+
+  async function confirmLocation(lat, lon){
+    $('status').textContent = 'Confirming location…';
+    try {
+      const place = await reverseGeocode(lat, lon);
+      $('location-name').textContent = place;
+      $('location-confirm').hidden = false;
+      $('status').textContent = '';
+      saveLastLocation(lat, lon, place); // keep the persisted name in sync
+    } catch (e) {
+      $('location-confirm').hidden = true;
+      $('status').textContent = 'Could not confirm the city name for these coordinates.';
+    }
+  }
+
+  // ---- Local persistence (favorites + last-used location) ----
+  // Wrapped in try/catch since localStorage can throw in some contexts
+  // (private browsing, storage disabled) — the app should degrade to
+  // "just doesn't remember," never break.
+  function loadStore(key, fallback){
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { return fallback; }
+  }
+  function saveStore(key, value){
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  }
+
+  const LAST_LOCATION_KEY = 'daylightCalc.lastLocation';
+  function saveLastLocation(lat, lon, name){
+    saveStore(LAST_LOCATION_KEY, { lat, lon, name: name || null });
+  }
+  function loadLastLocation(){
+    return loadStore(LAST_LOCATION_KEY, null);
+  }
+
+  const FAVORITES_KEY = 'daylightCalc.favorites';
+  const MAX_FAVORITES = 5;
+  function loadFavorites(){
+    const raw = loadStore(FAVORITES_KEY, []);
+    return Array.isArray(raw) ? raw.slice(0, MAX_FAVORITES) : [];
+  }
+  function saveFavorites(list){ saveStore(FAVORITES_KEY, list); }
+
+  function currentLocationLabel(){
+    const nameEl = $('location-name');
+    if (!$('location-confirm').hidden && nameEl.textContent && nameEl.textContent !== '—'){
+      return nameEl.textContent;
+    }
+    const lat = parseFloat($('lat').value), lon = parseFloat($('lon').value);
+    return lat.toFixed(2) + ', ' + lon.toFixed(2);
+  }
+
+  function selectFavorite(f){
+    $('lat').value = f.lat.toFixed(4);
+    $('lon').value = f.lon.toFixed(4);
+    $('location-name').textContent = f.name;
+    $('location-confirm').hidden = false;
+    saveLastLocation(f.lat, f.lon, f.name);
+    update();
+    updateHeaderStatus(f.lat, f.lon);
+    renderFavorites();
+  }
+
+  function removeFavorite(index){
+    const favs = loadFavorites();
+    favs.splice(index, 1);
+    saveFavorites(favs);
+    renderFavorites();
+  }
+
+  function saveCurrentAsFavorite(){
+    const favs = loadFavorites();
+    if (favs.length >= MAX_FAVORITES) return;
+    const lat = parseFloat($('lat').value), lon = parseFloat($('lon').value);
+    if (isNaN(lat) || isNaN(lon)) return;
+    favs.push({ name: currentLocationLabel(), lat, lon });
+    saveFavorites(favs);
+    renderFavorites();
+  }
+
+  // Only ever renders saved favorites plus, if there's still room, a single
+  // "add" row — never five empty placeholders. The list grows one row at a
+  // time as favorites are added, and only looks like "five lines" once all
+  // five are actually in use.
+  function renderFavorites(){
+    const favs = loadFavorites();
+    const list = $('favorites-list');
+    list.innerHTML = '';
+
+    favs.forEach((f, i) => {
+      const li = document.createElement('li');
+      li.className = 'fav-row';
+
+      const nameBtn = document.createElement('button');
+      nameBtn.type = 'button';
+      nameBtn.className = 'fav-name';
+      nameBtn.textContent = f.name;
+      nameBtn.addEventListener('click', () => selectFavorite(f));
+      li.appendChild(nameBtn);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'fav-remove';
+      removeBtn.setAttribute('aria-label', 'Remove ' + f.name + ' from favorites');
+      removeBtn.textContent = '\u00D7';
+      removeBtn.addEventListener('click', () => removeFavorite(i));
+      li.appendChild(removeBtn);
+
+      list.appendChild(li);
+    });
+
+    if (favs.length < MAX_FAVORITES){
+      const li = document.createElement('li');
+      li.className = 'fav-row empty';
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'fav-name';
+      addBtn.textContent = '+ Save current location here';
+      addBtn.addEventListener('click', saveCurrentAsFavorite);
+      li.appendChild(addBtn);
+      list.appendChild(li);
+    }
+  }
+
+  // Roughly translates an Open-Meteo WMO weather code into a plain word or
+  // two, in keeping with the rest of the app's descriptive, non-iconographic
+  // voice rather than a generic emoji weather badge.
+  function titleCase(str){
+    return str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1));
+  }
+
+  function weatherDescription(code){
+    const map = {
+      0:'clear sky', 1:'mostly clear', 2:'partly cloudy', 3:'overcast',
+      45:'foggy', 48:'foggy',
+      51:'light drizzle', 53:'drizzle', 55:'heavy drizzle',
+      56:'freezing drizzle', 57:'freezing drizzle',
+      61:'light rain', 63:'rain', 65:'heavy rain',
+      66:'freezing rain', 67:'freezing rain',
+      71:'light snow', 73:'snow', 75:'heavy snow', 77:'snow grains',
+      80:'light showers', 81:'showers', 82:'heavy showers',
+      85:'snow showers', 86:'snow showers',
+      95:'thunderstorms', 96:'thunderstorms', 99:'thunderstorms',
+    };
+    return titleCase(map[code] || 'conditions unknown');
+  }
+
+  // Uses the sun's actual altitude (same math as the arc chart) rather than
+  // a simple before/after check. The zone between civil twilight (-6°) and
+  // the horizon (0°) is split at its midpoint (-3°): the half closer to
+  // darkness is Dawn/Dusk, the half closer to the horizon is Sunrise/
+  // Sunset. 'visual' is the coarser 4-way state the scene illustration
+  // uses (sun/moon + gradient bucket); 'phaseKey' is the full 6-way state
+  // used for the page background and the label, one-to-one.
+  function daylightPhase(lat, lon){
+    const nowInstant = new Date();
+
+    // Which calendar date is "today" AT THE LOCATION right now — not UTC's
+    // own date, which is a different day for a chunk of each day at any
+    // location well ahead of or behind UTC. Getting this wrong was the
+    // actual bug: for roughly a third of the day at a UTC+8 location like
+    // Perth, UTC is still on the previous calendar date, so using UTC's
+    // date compared solar noon for the wrong day against "now", which
+    // could flip morning into evening in the comparison.
+    let localY, localM, localD;
+    if (locationTzName){
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: locationTzName, year:'numeric', month:'numeric', day:'numeric'
+        }).formatToParts(nowInstant);
+        const get = t => parseInt((parts.find(p => p.type === t) || {}).value, 10);
+        if (!isNaN(get('year'))) { localY = get('year'); localM = get('month'); localD = get('day'); }
+      } catch (e) { /* fall through to the estimate below */ }
+    }
+    if (localY == null){
+      const estLocal = new Date(nowInstant.getTime() + lonOffsetHours(lon) * 3600000);
+      localY = estLocal.getUTCFullYear(); localM = estLocal.getUTCMonth() + 1; localD = estLocal.getUTCDate();
+    }
+
+    const today = computeDaily(localY, localM, localD, lat, lon);
+
+    if (today.civilState === 'never-below') return { visual:'day', phaseKey:'day' };
+    if (today.civilState === 'never-above') return { visual:'night', phaseKey:'night' };
+
+    // Convert solar noon into a real timestamp on the correct calendar
+    // date, then compare actual timestamps — this is what avoids the whole
+    // "which UTC day" ambiguity that caused the bug, rather than comparing
+    // bare hour-of-day numbers that have lost track of which day they're on.
+    let noonH = today.solarNoonUTC, noonDayOffset = 0;
+    if (noonH < 0) { noonDayOffset = -1; noonH += 24; }
+    if (noonH >= 24) { noonDayOffset = 1; noonH -= 24; }
+    const noonHH = Math.floor(noonH), noonMM = Math.round((noonH - noonHH) * 60);
+    const noonInstant = new Date(Date.UTC(localY, localM - 1, localD + noonDayOffset, noonHH, noonMM));
+    const hoursFromNoon = (nowInstant.getTime() - noonInstant.getTime()) / 3600000;
+
+    const latRad = toRad(lat);
+    const H = toRad(hoursFromNoon * 15);
+    const sinAlt = Math.sin(latRad)*Math.sin(today.decl) + Math.cos(latRad)*Math.cos(today.decl)*Math.cos(H);
+    const alt = toDeg(Math.asin(clamp(sinAlt, -1, 1)));
+
+    // Matches the same -0.833° threshold used for the displayed sunrise/
+    // sunset time (accounting for atmospheric refraction and the Sun's
+    // apparent size — the standard almanac definition) rather than a bare
+    // 0°. Using a different threshold here than the displayed time used
+    // was a real bug: it made the phase flip to Sunset several minutes
+    // before the Day Timeline's own displayed sunset time. The twilight
+    // midpoint is recomputed to match, staying true to the original
+    // 'split the twilight band exactly in half' design.
+    const CIVIL_ALT = -6, HORIZON_ALT = -0.833;
+    const TWILIGHT_MID = (CIVIL_ALT + HORIZON_ALT) / 2;
+
+    if (alt <= CIVIL_ALT) return { visual:'night', phaseKey:'night' };
+    if (alt >= HORIZON_ALT) return { visual:'day', phaseKey:'day' };
+
+    const isMorning = hoursFromNoon < 0;
+    const visual = isMorning ? 'dawn' : 'dusk';
+    let phaseKey;
+    if (isMorning) phaseKey = alt < TWILIGHT_MID ? 'dawn' : 'sunrise';
+    else phaseKey = alt >= TWILIGHT_MID ? 'sunset' : 'dusk';
+    return { visual, phaseKey };
+  }
+
+  function phaseLabel(phaseKey){
+    const labels = { day:'Day', night:'Night', dawn:'First Light', sunrise:'Sunrise', sunset:'Sunset', dusk:'Last Light' };
+    return labels[phaseKey];
+  }
+
+  function weatherBucket(code){
+    if (code === 0) return 'clear';
+    if (code === 1) return 'mostlyClear';
+    if (code === 2) return 'partlyCloudy';
+    if (code === 3) return 'overcast';
+    if (code === 45 || code === 48) return 'fog';
+    if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) return 'rain';
+    if ([71,73,75,77,85,86].includes(code)) return 'snow';
+    if ([95,96,99].includes(code)) return 'storm';
+    return 'clear';
+  }
+
+  // A soft puffy cloud built from overlapping same-colour shapes (no seams),
+  // reusable at any position/size/colour.
+  function cloudGroup(cx, cy, scale, color){
+    return '<g transform="translate('+cx+','+cy+') scale('+scale+')" fill="'+color+'">' +
+      '<ellipse cx="0" cy="12" rx="36" ry="15"/>' +
+      '<circle cx="-19" cy="1" r="16"/>' +
+      '<circle cx="9" cy="-7" r="21"/>' +
+      '<circle cx="33" cy="4" r="14"/>' +
+      '</g>';
+  }
+
+  function sunGroup(cx, cy, r, color, rays){
+    let raysMarkup = '';
+    if (rays){
+      for (let i=0; i<8; i++){
+        const ang = i * 45 * Math.PI/180;
+        const x1 = cx + Math.cos(ang)*(r+7), y1 = cy + Math.sin(ang)*(r+7);
+        const x2 = cx + Math.cos(ang)*(r+7+r*0.5), y2 = cy + Math.sin(ang)*(r+7+r*0.5);
+        raysMarkup += '<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="'+color+'" stroke-width="3.5" stroke-linecap="round"/>';
+      }
+    }
+    return '<g>' + raysMarkup + '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+color+'"/></g>';
+  }
+
+  // A sun sitting low near the horizon with a soft glow behind it, for the
+  // dawn/dusk transition window — no rays, since it reads more like a
+  // rising/setting sun than a midday one.
+  function horizonSunGroup(cx, cy, r, color){
+    return '<g>' +
+      '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*1.7)+'" fill="'+color+'" opacity="0.22"/>' +
+      '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+color+'"/>' +
+      '</g>';
+  }
+
+  // Crescent moon as a single filled path (two arcs) rather than a
+  // colour-subtraction trick, so it reads correctly on any gradient.
+  function moonGroup(cx, cy, r, color){
+    const s = r / 9, tx = cx - 12*s, ty = cy - 12*s;
+    return '<g transform="translate('+tx.toFixed(1)+','+ty.toFixed(1)+') scale('+s.toFixed(2)+')" fill="'+color+'">' +
+      '<path d="M20.2 14.7A8.2 8.2 0 1 1 9.3 3.8a6.6 6.6 0 0 0 10.9 10.9Z"/></g>';
+  }
+
+  // Moon phase: illumination % and named phase, from a simple, well-known
+  // approximation (days since a known reference new moon, mod the 29.53-day
+  // synodic month). This is standalone date math — no location, no network
+  // — so it's the same for anyone on Earth looking at the sky the same
+  // night, which is astronomically correct: everyone sees the same phase.
+  // Verified against two independently-confirmed real full moon dates.
+  const SYNODIC_MONTH_DAYS = 29.53058867;
+  const REFERENCE_NEW_MOON_MS = Date.UTC(2000, 0, 6, 18, 14, 0);
+
+  function moonPhaseInfo(date){
+    const daysSinceRef = (date.getTime() - REFERENCE_NEW_MOON_MS) / 86400000;
+    let age = daysSinceRef % SYNODIC_MONTH_DAYS;
+    if (age < 0) age += SYNODIC_MONTH_DAYS;
+    const phase = age / SYNODIC_MONTH_DAYS; // 0 (new) .. 0.5 (full) .. 1 (new)
+    const illumination = (1 - Math.cos(2 * Math.PI * phase)) / 2; // 0..1
+    const waxing = phase < 0.5;
+
+    let name;
+    if (phase < 0.02 || phase > 0.98) name = 'New Moon';
+    else if (phase < 0.24) name = 'Waxing Crescent';
+    else if (phase < 0.26) name = 'First Quarter';
+    else if (phase < 0.49) name = 'Waxing Gibbous';
+    else if (phase < 0.51) name = 'Full Moon';
+    else if (phase < 0.74) name = 'Waning Gibbous';
+    else if (phase < 0.76) name = 'Last Quarter';
+    else name = 'Waning Crescent';
+
+    return { illumination, waxing, name, percent: Math.round(illumination * 100) };
+  }
+
+  // The actual crescent/gibbous silhouette. Built as an explicit polygon
+  // (not SVG arc sweep-flags, which turned out error-prone to get right
+  // for every phase) — an outer semicircle on the illuminated side, plus
+  // a terminator curve back to the start whose bulge direction and width
+  // together sweep smoothly through crescent -> quarter -> gibbous -> full.
+  // Mathematically verified: enclosed area matches the intended
+  // illumination fraction to within normal polygon-approximation error.
+  // litOnRight flips for the Southern Hemisphere, where the Moon genuinely
+  // appears oriented differently — a waxing Moon lights up on the right as
+  // seen from the north, but on the left as seen from the south.
+  function moonPhaseShape(cx, cy, r, illumFrac, waxing, litColor, darkColor, isSouthern){
+    const litOnRight = isSouthern ? !waxing : waxing;
+    const sign = litOnRight ? 1 : -1;
+    const bulgeSign = illumFrac < 0.5 ? sign : -sign;
+    const rx = r * Math.abs(1 - 2 * illumFrac);
+    const steps = 24;
+    let pts = [];
+    for (let i = 0; i <= steps; i++){
+      const a = -Math.PI/2 + Math.PI * (i/steps);
+      pts.push((cx + sign*r*Math.cos(a)).toFixed(2) + ',' + (cy + r*Math.sin(a)).toFixed(2));
+    }
+    for (let i = 0; i <= steps; i++){
+      const a = Math.PI/2 - Math.PI * (i/steps);
+      pts.push((cx + bulgeSign*rx*Math.cos(a)).toFixed(2) + ',' + (cy + r*Math.sin(a)).toFixed(2));
+    }
+    const path = 'M ' + pts.join(' L ') + ' Z';
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + darkColor + '"/>' +
+      '<path d="' + path + '" fill="' + litColor + '"/>';
+  }
+
+
+  // Builds the full illustrated weather scene: sky gradient background plus
+  // whatever combination of sun/moon, cloud, rain, snow, fog or lightning
+  // suits the current conditions — similar in spirit to a BOM-style weather
+  // summary graphic, rather than a small static icon.
+  function weatherSceneMarkup(code, phase, tempStr, descStr, moonInfo, isSouthern){
+    const W = 340, H = 160;
+    const bucket = weatherBucket(code);
+    const ink = '#16233E';
+    const sun = '#F0A93E', moon = '#EFF3FA', moonShadow = 'rgba(20,26,48,0.4)', horizonSun = '#F2874A';
+    const cloudLight = '#FFFFFF', cloudMid = '#EEF2F6', cloudDark = '#AEB8C6';
+    const isTwilight = (phase === 'dawn' || phase === 'dusk');
+
+    // Only the 'visible sky' buckets need dawn/dusk-specific tones — cloud,
+    // rain, fog etc. look much the same regardless of exactly how low the
+    // sun is, since it isn't visible in those conditions anyway.
+    const SKY = {
+      clear:        { day:['#FCEAB4','#7FC8F0'], night:['#C7CFEA','#4C5D96'], dawn:['#FBC89A','#8FC7EA'], dusk:['#F2A97E','#5F76A8'] },
+      mostlyClear:  { day:['#F8E9C0','#93D0EE'], night:['#CBD1E8','#556A9C'], dawn:['#F6CBA0','#9BCBE8'], dusk:['#EDAE86','#6879A6'] },
+      partlyCloudy: { day:['#F0EBDD','#A9CEE2'], night:['#D2D6E6','#6C7A9E'], dawn:['#EFD3B4','#AACBE0'], dusk:['#E4B497','#7686A8'] },
+      overcast:     ['#E6E9EC','#C6CBD3'],
+      fog:          ['#EAECED','#D2D5D8'],
+      rain:         ['#D9E3EA','#95AABC'],
+      snow:         ['#F4F8FB','#DCE7EF'],
+      storm:        ['#CDD1DC','#7C8398'],
+    };
+    const skyEntry = SKY[bucket];
+    const [c1, c2] = Array.isArray(skyEntry) ? skyEntry : skyEntry[phase];
+    const sunCx = 250, sunCy = 52;
+
+    function celestial(r){
+      if (isTwilight) return horizonSunGroup(sunCx, 122, r*0.85, horizonSun);
+      if (phase === 'day') return sunGroup(sunCx, sunCy, r, sun, true);
+      if (moonInfo) return moonPhaseShape(sunCx, sunCy, r*0.87, moonInfo.illumination, moonInfo.waxing, moon, moonShadow, isSouthern);
+      return moonGroup(sunCx, sunCy, r*0.87, moon); // fallback if phase info isn't available for some reason
+    }
+
+    let s = '<defs><linearGradient id="wxsky" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="'+c1+'"/><stop offset="100%" stop-color="'+c2+'"/></linearGradient></defs>';
+    s += '<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="url(#wxsky)"/>';
+
+    if (bucket === 'clear'){
+      s += celestial(30);
+      if (phase === 'night') s += '<circle cx="200" cy="30" r="1.4" fill="#FFF"/><circle cx="288" cy="72" r="1" fill="#FFF"/><circle cx="220" cy="82" r="1" fill="#FFF"/>';
+    } else if (bucket === 'mostlyClear'){
+      s += celestial(30);
+      s += cloudGroup(258, 94, 0.55, cloudLight);
+    } else if (bucket === 'partlyCloudy'){
+      s += celestial(28);
+      s += cloudGroup(228, 86, 0.85, cloudLight);
+    } else if (bucket === 'overcast'){
+      s += cloudGroup(150, 58, 1.15, cloudMid) + cloudGroup(252, 90, 0.9, cloudMid);
+    } else if (bucket === 'fog'){
+      s += '<g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.75">' +
+        '<line x1="40" y1="50" x2="300" y2="50"/><line x1="20" y1="74" x2="260" y2="74"/><line x1="60" y1="98" x2="310" y2="98"/></g>';
+    } else if (bucket === 'rain'){
+      s += cloudGroup(182, 55, 1.1, cloudMid) + cloudGroup(262, 78, 0.7, cloudLight);
+      s += '<g stroke="'+ink+'" stroke-width="2.4" stroke-linecap="round" opacity="0.5">' +
+        '<line x1="150" y1="106" x2="142" y2="123"/><line x1="176" y1="109" x2="168" y2="129"/>' +
+        '<line x1="202" y1="106" x2="194" y2="123"/><line x1="227" y1="111" x2="219" y2="131"/></g>';
+    } else if (bucket === 'snow'){
+      s += cloudGroup(182, 55, 1.1, cloudMid) + cloudGroup(262, 78, 0.7, cloudLight);
+      s += '<g fill="'+ink+'" opacity="0.5">' +
+        '<circle cx="150" cy="116" r="2.2"/><circle cx="179" cy="123" r="2.2"/>' +
+        '<circle cx="206" cy="114" r="2.2"/><circle cx="231" cy="124" r="2.2"/></g>';
+    } else if (bucket === 'storm'){
+      s += cloudGroup(192, 56, 1.25, cloudDark);
+      s += '<path d="M206,101 L189,129 L203,129 L186,156" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+    }
+
+    s += '<text x="24" y="120" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+'</text>';
+    s += '<text x="26" y="141" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+descStr+'</text>';
+    return s;
+  }
+
+  // Only the two darkest twilight steps and full night need light header
+  // text — day, sunrise, and sunset all stay on a light background.
+  function isDarkTheme(phaseKey){
+    return phaseKey === 'night' || phaseKey === 'dawn' || phaseKey === 'dusk';
+  }
+
+  // The location's real IANA timezone name (e.g. "Australia/Melbourne")
+  // comes from Open-Meteo's timezone=auto. The clock itself, including its
+  // abbreviation (AEDT vs AEST, PDT vs PST), is then formatted using the
+  // browser's own built-in timezone database via Intl — which reliably
+  // knows real zone abbreviations, rather than Open-Meteo's own
+  // abbreviation field, which falls back to a generic "GMT+X" for a lot of
+  // places instead of a proper name.
+  let locationTzName = null;
+
+  function updateLocationClock(){
+    const el = $('location-clock');
+    if (!locationTzName){
+      el.textContent = '—';
+      return;
+    }
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: locationTzName,
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false, timeZoneName: 'short'
+      }).formatToParts(new Date());
+      const get = type => (parts.find(p => p.type === type) || {}).value;
+      let hh = get('hour');
+      if (hh === '24') hh = '00'; // some locales render midnight as 24 with hour12:false
+      const mm = get('minute'), ss = get('second'), tzName = get('timeZoneName');
+      el.textContent = hh + ':' + mm + ':' + ss + (tzName ? ' ' + tzName : '');
+    } catch (e) {
+      el.textContent = '—';
+    }
+  }
+
+  async function updateHeaderStatus(lat, lon){
+    const hero = $('weather-hero'), scene = $('weather-scene');
+    const { visual, phaseKey } = daylightPhase(lat, lon);
+    const label = phaseLabel(phaseKey);
+
+    // The background reflects only time of day, so it can update straight
+    // away — no need to wait on the weather fetch for that part.
+    document.body.dataset.weather = phaseKey;
+    document.body.dataset.tone = isDarkTheme(phaseKey) ? 'dark' : 'light';
+
+    // Moon phase needs no network or location fetch — pure date math — so
+    // it's computed once here and reused for both the icon and the text,
+    // only when it's actually Night (never during day/dawn/dusk).
+    const moonInfo = phaseKey === 'night' ? moonPhaseInfo(new Date()) : null;
+    const isSouthern = lat < 0;
+    const moonText = moonInfo ? ' · ' + moonInfo.percent + '% ' + moonInfo.name : '';
+
+    // The illustrated scene does depend on the weather fetch, so it stays
+    // hidden until real data is in, rather than flashing a guess.
+    hero.hidden = true;
+
+    try {
+      const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,weather_code&timezone=auto';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('weather fetch failed');
+      const data = await res.json();
+      const temp = Math.round(data.current.temperature_2m);
+      const code = data.current.weather_code;
+      scene.innerHTML = weatherSceneMarkup(code, visual, temp + '°C', label + ' · ' + weatherDescription(code) + moonText, moonInfo, isSouthern);
+      locationTzName = data.timezone || null;
+      updateLocationClock();
+      update(); // day timeline/chart may have rendered with the fallback estimate before this resolved — refresh with accurate DST-aware times now that the real timezone is known
+      hero.hidden = false;
+    } catch (e) {
+      scene.innerHTML = weatherSceneMarkup(0, visual, '', label + moonText, moonInfo, isSouthern);
+      locationTzName = null;
+      updateLocationClock();
+      update();
+      hero.hidden = false;
+    }
+  }
+
+  // Forward geocoding (place name -> lat/long), no API key needed. Lets the
+  // person type a city instead of hunting down coordinates by hand.
+  async function geocodePlace(query){
+    const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(query) + '&count=5&language=en&format=json';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('geocoding failed');
+    const data = await res.json();
+    return data.results || [];
+  }
+
+  function placeLabel(r){
+    return [r.name, r.admin1, r.country].filter(Boolean).join(', ');
+  }
+
+  function selectPlace(r){
+    $('lat').value = r.latitude.toFixed(4);
+    $('lon').value = r.longitude.toFixed(4);
+    $('location-name').textContent = placeLabel(r);
+    $('location-confirm').hidden = false;
+    $('place-results').hidden = true;
+    $('place-results').innerHTML = '';
+    $('place-search').value = '';
+    $('status').textContent = '';
+    saveLastLocation(r.latitude, r.longitude, placeLabel(r));
+    update();
+    updateHeaderStatus(r.latitude, r.longitude);
+    renderFavorites();
+  }
+
+  async function runPlaceSearch(){
+    const q = $('place-search').value.trim();
+    if (!q) return;
+    $('status').textContent = 'Searching…';
+    $('place-results').hidden = true;
+    $('place-results').innerHTML = '';
+    try {
+      const results = await geocodePlace(q);
+      if (results.length === 0){
+        $('status').textContent = 'No matches found for "' + q + '" — try a different spelling, or enter coordinates manually.';
+        return;
+      }
+      if (results.length === 1){
+        selectPlace(results[0]);
+        return;
+      }
+      $('status').textContent = 'Multiple matches — pick one:';
+      const list = $('place-results');
+      results.forEach(r => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'place-option';
+        btn.textContent = placeLabel(r);
+        btn.addEventListener('click', () => selectPlace(r));
+        list.appendChild(btn);
+      });
+      list.hidden = false;
+    } catch (e) {
+      $('status').textContent = 'Search failed — check your connection and try again.';
+    }
+  }
+
+  $('search-btn').addEventListener('click', runPlaceSearch);
+  $('place-search').addEventListener('keydown', e => {
+    if (e.key === 'Enter'){ e.preventDefault(); runPlaceSearch(); }
+  });
+
+  $('locate').addEventListener('click', () => {
+    if (!navigator.geolocation){
+      $('status').textContent = 'Geolocation is not available here.';
+      return;
+    }
+    if (!window.isSecureContext){
+      $('status').textContent = 'Location needs a secure (https) page to work — this will work once the file is hosted online or opened in a proper browser tab, but not as a bare downloaded file.';
+      return;
+    }
+    $('location-confirm').hidden = true;
+    $('status').textContent = 'Locating…';
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude, lon = pos.coords.longitude;
+        $('lat').value = lat.toFixed(4);
+        $('lon').value = lon.toFixed(4);
+        saveLastLocation(lat, lon);
+        update();
+        confirmLocation(lat, lon);
+        updateHeaderStatus(lat, lon);
+        renderFavorites();
+      },
+      err => {
+        const messages = {
+          1: 'Location access was denied — check your browser or site settings to allow location for this page, then try again.',
+          2: 'Your device could not determine a location right now. Try again in a moment, or enter coordinates manually.',
+          3: 'Location took too long to respond. Try again, or enter coordinates manually.',
+        };
+        $('status').textContent = messages[err.code] || 'Could not get your location — enter coordinates manually instead.';
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
+
+  // Confirm the city, and refresh the weather/day-night status, whenever
+  // coordinates are entered or edited by hand — the header always reflects
+  // whatever location is currently selected in the calculator.
+  ['lat','lon'].forEach(id => $(id).addEventListener('change', () => {
+    const lat = parseFloat($('lat').value), lon = parseFloat($('lon').value);
+    if (!isNaN(lat) && !isNaN(lon)){
+      saveLastLocation(lat, lon);
+      confirmLocation(lat, lon);
+      updateHeaderStatus(lat, lon);
+      renderFavorites();
+    }
+  }));
+
+  // Force a clean, known baseline for every piece of location state before
+  // restoring anything. No location is ever assumed — fields stay blank
+  // until either a real location comes back from geolocation, or the
+  // visitor searches for or enters one themselves.
+  $('location-confirm').hidden = true;
+  $('location-name').textContent = '—';
+  $('lat').value = '';
+  $('lon').value = '';
+
+  const restoredLocation = loadLastLocation();
+  renderFavorites();
+
+  if (restoredLocation && !isNaN(restoredLocation.lat) && !isNaN(restoredLocation.lon)){
+    // Returning visitor — restore exactly where they left off.
+    $('lat').value = restoredLocation.lat.toFixed(4);
+    $('lon').value = restoredLocation.lon.toFixed(4);
+    if (restoredLocation.name){
+      $('location-name').textContent = restoredLocation.name;
+      $('location-confirm').hidden = false;
+    }
+    update();
+    confirmLocation(parseFloat($('lat').value), parseFloat($('lon').value));
+    updateHeaderStatus(parseFloat($('lat').value), parseFloat($('lon').value));
+  } else if (navigator.geolocation && window.isSecureContext){
+    // First-ever visit anywhere in the world — try to use the visitor's
+    // real location. If it's not granted, leave everything blank rather
+    // than guessing at a location that isn't theirs.
+    $('status').textContent = 'Checking your location…';
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude, lon = pos.coords.longitude;
+        $('lat').value = lat.toFixed(4);
+        $('lon').value = lon.toFixed(4);
+        saveLastLocation(lat, lon);
+        $('status').textContent = '';
+        update();
+        confirmLocation(lat, lon);
+        updateHeaderStatus(lat, lon);
+        renderFavorites();
+      },
+      () => {
+        $('status').textContent = 'Turn on location access, or search for a place to get started.';
+      },
+      { timeout: 10000, maximumAge: 10 * 60000 }
+    );
+  } else {
+    $('status').textContent = 'Search for a place to get started.';
+  }
+
+  setInterval(update, 60000);
+  setInterval(updateLocationClock, 1000);
+  setInterval(() => {
+    const lat = parseFloat($('lat').value), lon = parseFloat($('lon').value);
+    if (!isNaN(lat) && !isNaN(lon)) updateHeaderStatus(lat, lon);
+  }, 15 * 60000);
+</script>
+</body>
+</html>
