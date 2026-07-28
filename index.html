@@ -483,10 +483,11 @@
       <span class="tl-value" id="daylength">—</span>
     </div>
     <ul class="timeline-list">
-      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-civil"></span>Dawn</span><span class="tl-value" id="civil-dawn">—</span></li>
+      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-civil"></span>First Light</span><span class="tl-value" id="civil-dawn">—</span></li>
       <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-sun"></span>Sunrise</span><span class="tl-value" id="sunrise">—</span></li>
+      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-sun"></span>Midday</span><span class="tl-value" id="midday">—</span></li>
       <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-sun"></span>Sunset</span><span class="tl-value" id="sunset">—</span></li>
-      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-civil"></span>Dusk</span><span class="tl-value" id="civil-dusk">—</span></li>
+      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-civil"></span>Last Light</span><span class="tl-value" id="civil-dusk">—</span></li>
     </ul>
   </section>
 
@@ -1015,6 +1016,7 @@
     $('daylength').textContent = daily.polar === 'night' ? '0h 0m' : daily.polar === 'day' ? '24h 0m' : fmtDayLength(daily.dayLengthHours);
 
     $('sunrise').textContent = daily.polar ? '—' : fmtClockFromUTC(daily.sunriseUTC, lon, y, m, d);
+    $('midday').textContent = fmtClockFromUTC(daily.solarNoonUTC, lon, y, m, d);
     $('sunset').textContent  = daily.polar ? '—' : fmtClockFromUTC(daily.sunsetUTC, lon, y, m, d);
 
     $('civil-dawn').textContent = fmtTwilight(daily.civilState, daily.civilDawnUTC, lon, y, m, d);
@@ -1199,19 +1201,55 @@
   // uses (sun/moon + gradient bucket); 'phaseKey' is the full 6-way state
   // used for the page background and the label, one-to-one.
   function daylightPhase(lat, lon){
-    const now = new Date();
-    const today = computeDaily(now.getUTCFullYear(), now.getUTCMonth()+1, now.getUTCDate(), lat, lon);
-    const utcHoursNow = now.getUTCHours() + now.getUTCMinutes()/60 + now.getUTCSeconds()/3600;
+    const nowInstant = new Date();
+
+    // Which calendar date is "today" AT THE LOCATION right now — not UTC's
+    // own date, which is a different day for a chunk of each day at any
+    // location well ahead of or behind UTC. Getting this wrong was the
+    // actual bug: for roughly a third of the day at a UTC+8 location like
+    // Perth, UTC is still on the previous calendar date, so using UTC's
+    // date compared solar noon for the wrong day against "now", which
+    // could flip morning into evening in the comparison.
+    let localY, localM, localD;
+    if (locationTzName){
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: locationTzName, year:'numeric', month:'numeric', day:'numeric'
+        }).formatToParts(nowInstant);
+        const get = t => parseInt((parts.find(p => p.type === t) || {}).value, 10);
+        if (!isNaN(get('year'))) { localY = get('year'); localM = get('month'); localD = get('day'); }
+      } catch (e) { /* fall through to the estimate below */ }
+    }
+    if (localY == null){
+      const estLocal = new Date(nowInstant.getTime() + lonOffsetHours(lon) * 3600000);
+      localY = estLocal.getUTCFullYear(); localM = estLocal.getUTCMonth() + 1; localD = estLocal.getUTCDate();
+    }
+
+    const today = computeDaily(localY, localM, localD, lat, lon);
 
     if (today.civilState === 'never-below') return { visual:'day', phaseKey:'day' };
     if (today.civilState === 'never-above') return { visual:'night', phaseKey:'night' };
 
+    // Convert solar noon into a real timestamp on the correct calendar
+    // date, then compare actual timestamps — this is what avoids the whole
+    // "which UTC day" ambiguity that caused the bug, rather than comparing
+    // bare hour-of-day numbers that have lost track of which day they're on.
+    let noonH = today.solarNoonUTC, noonDayOffset = 0;
+    if (noonH < 0) { noonDayOffset = -1; noonH += 24; }
+    if (noonH >= 24) { noonDayOffset = 1; noonH -= 24; }
+    const noonHH = Math.floor(noonH), noonMM = Math.round((noonH - noonHH) * 60);
+    const noonInstant = new Date(Date.UTC(localY, localM - 1, localD + noonDayOffset, noonHH, noonMM));
+    const hoursFromNoon = (nowInstant.getTime() - noonInstant.getTime()) / 3600000;
+
     const latRad = toRad(lat);
-    const alt = altitudeAt(utcHoursNow, today, latRad);
+    const H = toRad(hoursFromNoon * 15);
+    const sinAlt = Math.sin(latRad)*Math.sin(today.decl) + Math.cos(latRad)*Math.cos(today.decl)*Math.cos(H);
+    const alt = toDeg(Math.asin(clamp(sinAlt, -1, 1)));
+
     if (alt <= -6) return { visual:'night', phaseKey:'night' };
     if (alt >= 0) return { visual:'day', phaseKey:'day' };
 
-    const isMorning = utcHoursNow < today.solarNoonUTC;
+    const isMorning = hoursFromNoon < 0;
     const visual = isMorning ? 'dawn' : 'dusk';
     let phaseKey;
     if (isMorning) phaseKey = alt < -3 ? 'dawn' : 'sunrise';
@@ -1220,7 +1258,7 @@
   }
 
   function phaseLabel(phaseKey){
-    const labels = { day:'Day', night:'Night', dawn:'Dawn', sunrise:'Sunrise', sunset:'Sunset', dusk:'Dusk' };
+    const labels = { day:'Day', night:'Night', dawn:'First Light', sunrise:'Sunrise', sunset:'Sunset', dusk:'Last Light' };
     return labels[phaseKey];
   }
 
