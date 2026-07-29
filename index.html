@@ -1510,22 +1510,8 @@
 
   async function updateHeaderStatus(lat, lon){
     const hero = $('weather-hero'), scene = $('weather-scene');
-    const { visual, phaseKey, daily, localY, localM, localD } = daylightPhase(lat, lon);
+    const { visual, phaseKey } = daylightPhase(lat, lon);
     const label = phaseLabel(phaseKey);
-
-    // For the four twilight-adjacent phases, pair the phase word with the
-    // exact matching Day Timeline time — Dawn/Sunset show when that phase
-    // began, Sunrise/Dusk show the moment it's leading up to. Makes the
-    // relationship between the header phase (a period) and the Day
-    // Timeline (specific instants) visible instead of just a discrepancy
-    // to notice and wonder about.
-    const twilightTimeSource = {
-      dawn: daily.civilDawnUTC, sunrise: daily.sunriseUTC,
-      sunset: daily.sunsetUTC, dusk: daily.civilDuskUTC,
-    };
-    const phaseTimeSuffix = (phaseKey in twilightTimeSource)
-      ? ' · ' + fmtClockFromUTC(twilightTimeSource[phaseKey], lon, localY, localM, localD)
-      : '';
 
     // The background reflects only time of day, so it can update straight
     // away — no need to wait on the weather fetch for that part.
@@ -1539,6 +1525,26 @@
     const isSouthern = lat < 0;
     const moonText = moonInfo ? ' · ' + moonInfo.percent + '% ' + moonInfo.name : '';
 
+    // For the four twilight-adjacent phases, pair the phase word with the
+    // exact matching Day Timeline time — Dawn/Sunset show when that phase
+    // began, Sunrise/Dusk show the moment it's leading up to. Deliberately
+    // built AFTER locationTzName is resolved below (not up here before the
+    // fetch) — building it earlier was a real bug: it could run against a
+    // stale or still-unset timezone left over from a previous location,
+    // falling back to the rough longitude estimate while the Day Timeline
+    // (built after the fetch) used the correct real timezone — producing
+    // exactly the kind of 1-hour-off mismatch this feature exists to fix.
+    function buildPhaseTimeSuffix(){
+      const fresh = daylightPhase(lat, lon);
+      const twilightTimeSource = {
+        dawn: fresh.daily.civilDawnUTC, sunrise: fresh.daily.sunriseUTC,
+        sunset: fresh.daily.sunsetUTC, dusk: fresh.daily.civilDuskUTC,
+      };
+      return (fresh.phaseKey in twilightTimeSource)
+        ? ' · ' + fmtClockFromUTC(twilightTimeSource[fresh.phaseKey], lon, fresh.localY, fresh.localM, fresh.localD)
+        : '';
+    }
+
     // The illustrated scene does depend on the weather fetch, so it stays
     // hidden until real data is in, rather than flashing a guess.
     hero.hidden = true;
@@ -1550,14 +1556,16 @@
       const data = await res.json();
       const temp = Math.round(data.current.temperature_2m);
       const code = data.current.weather_code;
-      scene.innerHTML = weatherSceneMarkup(code, visual, temp + '°C', label + phaseTimeSuffix + ' · ' + weatherDescription(code) + moonText, moonInfo, isSouthern);
       locationTzName = data.timezone || null;
+      const phaseTimeSuffix = buildPhaseTimeSuffix();
+      scene.innerHTML = weatherSceneMarkup(code, visual, temp + '°C', label + phaseTimeSuffix + ' · ' + weatherDescription(code) + moonText, moonInfo, isSouthern);
       updateLocationClock();
       update(); // day timeline/chart may have rendered with the fallback estimate before this resolved — refresh with accurate DST-aware times now that the real timezone is known
       hero.hidden = false;
     } catch (e) {
-      scene.innerHTML = weatherSceneMarkup(0, visual, '', label + phaseTimeSuffix + moonText, moonInfo, isSouthern);
       locationTzName = null;
+      const phaseTimeSuffix = buildPhaseTimeSuffix();
+      scene.innerHTML = weatherSceneMarkup(0, visual, '', label + phaseTimeSuffix + moonText, moonInfo, isSouthern);
       updateLocationClock();
       update();
       hero.hidden = false;
