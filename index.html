@@ -1251,14 +1251,25 @@
     const sinAlt = Math.sin(latRad)*Math.sin(today.decl) + Math.cos(latRad)*Math.cos(today.decl)*Math.cos(H);
     const alt = toDeg(Math.asin(clamp(sinAlt, -1, 1)));
 
-    if (alt <= -6) return { visual:'night', phaseKey:'night' };
-    if (alt >= 0) return { visual:'day', phaseKey:'day' };
+    // Matches the same -0.833° threshold used for the displayed sunrise/
+    // sunset time (accounting for atmospheric refraction and the Sun's
+    // apparent size — the standard almanac definition) rather than a bare
+    // 0°. Using a different threshold here than the displayed time used
+    // was a real bug: it made the phase flip to Sunset several minutes
+    // before the Day Timeline's own displayed sunset time. The twilight
+    // midpoint is recomputed to match, staying true to the original
+    // 'split the twilight band exactly in half' design.
+    const CIVIL_ALT = -6, HORIZON_ALT = -0.833;
+    const TWILIGHT_MID = (CIVIL_ALT + HORIZON_ALT) / 2;
+
+    if (alt <= CIVIL_ALT) return { visual:'night', phaseKey:'night' };
+    if (alt >= HORIZON_ALT) return { visual:'day', phaseKey:'day' };
 
     const isMorning = hoursFromNoon < 0;
     const visual = isMorning ? 'dawn' : 'dusk';
     let phaseKey;
-    if (isMorning) phaseKey = alt < -3 ? 'dawn' : 'sunrise';
-    else phaseKey = alt >= -3 ? 'sunset' : 'dusk';
+    if (isMorning) phaseKey = alt < TWILIGHT_MID ? 'dawn' : 'sunrise';
+    else phaseKey = alt >= TWILIGHT_MID ? 'sunset' : 'dusk';
     return { visual, phaseKey };
   }
 
