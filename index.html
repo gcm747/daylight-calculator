@@ -1436,7 +1436,7 @@
         // emerging. Previously both pairs rendered identically.
         const nearHorizon = (phaseKey === 'sunrise' || phaseKey === 'sunset');
         const hCy = nearHorizon ? 108 : 138;
-        const hR = r * (nearHorizon ? 0.95 : 0.6);
+        const hR = r * (nearHorizon ? 0.95 : 0.78);
         const hGlow = nearHorizon ? 0.26 : 0.14;
         return horizonSunGroup(sunCx, hCy, hR*0.85, horizonSun, hGlow);
       }
