@@ -484,11 +484,11 @@
       <span class="tl-value" id="daylength">—</span>
     </div>
     <ul class="timeline-list">
-      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-civil"></span>First Light</span><span class="tl-value" id="civil-dawn">—</span></li>
+      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-civil"></span>Dawn</span><span class="tl-value" id="civil-dawn">—</span></li>
       <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-sun"></span>Sunrise</span><span class="tl-value" id="sunrise">—</span></li>
       <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-sun"></span>Midday</span><span class="tl-value" id="midday">—</span></li>
       <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-sun"></span>Sunset</span><span class="tl-value" id="sunset">—</span></li>
-      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-civil"></span>Last Light</span><span class="tl-value" id="civil-dusk">—</span></li>
+      <li class="timeline-row"><span class="tl-label"><span class="tl-dot dot-civil"></span>Dusk</span><span class="tl-value" id="civil-dusk">—</span></li>
     </ul>
   </section>
 
@@ -1232,8 +1232,8 @@
 
     const today = computeDaily(localY, localM, localD, lat, lon);
 
-    if (today.civilState === 'never-below') return { visual:'day', phaseKey:'day' };
-    if (today.civilState === 'never-above') return { visual:'night', phaseKey:'night' };
+    if (today.civilState === 'never-below') return { visual:'day', phaseKey:'day', daily:today, localY, localM, localD };
+    if (today.civilState === 'never-above') return { visual:'night', phaseKey:'night', daily:today, localY, localM, localD };
 
     // Convert solar noon into a real timestamp on the correct calendar
     // date, then compare actual timestamps — this is what avoids the whole
@@ -1266,15 +1266,15 @@
     const CIVIL_ALT = -6, HORIZON_ALT = -0.833;
     const TWILIGHT_MID = (CIVIL_ALT + HORIZON_ALT) / 2;
 
-    if (alt <= CIVIL_ALT) return { visual:'night', phaseKey:'night' };
-    if (alt >= HORIZON_ALT) return { visual:'day', phaseKey:'day' };
+    if (alt <= CIVIL_ALT) return { visual:'night', phaseKey:'night', daily:today, localY, localM, localD };
+    if (alt >= HORIZON_ALT) return { visual:'day', phaseKey:'day', daily:today, localY, localM, localD };
 
     const isMorning = hoursFromNoon < 0;
     const visual = isMorning ? 'dawn' : 'dusk';
     let phaseKey;
     if (isMorning) phaseKey = alt < TWILIGHT_MID ? 'dawn' : 'sunrise';
     else phaseKey = alt >= TWILIGHT_MID ? 'sunset' : 'dusk';
-    return { visual, phaseKey };
+    return { visual, phaseKey, daily:today, localY, localM, localD };
   }
 
   function phaseLabel(phaseKey){
@@ -1510,8 +1510,22 @@
 
   async function updateHeaderStatus(lat, lon){
     const hero = $('weather-hero'), scene = $('weather-scene');
-    const { visual, phaseKey } = daylightPhase(lat, lon);
+    const { visual, phaseKey, daily, localY, localM, localD } = daylightPhase(lat, lon);
     const label = phaseLabel(phaseKey);
+
+    // For the four twilight-adjacent phases, pair the phase word with the
+    // exact matching Day Timeline time — Dawn/Sunset show when that phase
+    // began, Sunrise/Dusk show the moment it's leading up to. Makes the
+    // relationship between the header phase (a period) and the Day
+    // Timeline (specific instants) visible instead of just a discrepancy
+    // to notice and wonder about.
+    const twilightTimeSource = {
+      dawn: daily.civilDawnUTC, sunrise: daily.sunriseUTC,
+      sunset: daily.sunsetUTC, dusk: daily.civilDuskUTC,
+    };
+    const phaseTimeSuffix = (phaseKey in twilightTimeSource)
+      ? ' · ' + fmtClockFromUTC(twilightTimeSource[phaseKey], lon, localY, localM, localD)
+      : '';
 
     // The background reflects only time of day, so it can update straight
     // away — no need to wait on the weather fetch for that part.
@@ -1536,13 +1550,13 @@
       const data = await res.json();
       const temp = Math.round(data.current.temperature_2m);
       const code = data.current.weather_code;
-      scene.innerHTML = weatherSceneMarkup(code, visual, temp + '°C', label + ' · ' + weatherDescription(code) + moonText, moonInfo, isSouthern);
+      scene.innerHTML = weatherSceneMarkup(code, visual, temp + '°C', label + phaseTimeSuffix + ' · ' + weatherDescription(code) + moonText, moonInfo, isSouthern);
       locationTzName = data.timezone || null;
       updateLocationClock();
       update(); // day timeline/chart may have rendered with the fallback estimate before this resolved — refresh with accurate DST-aware times now that the real timezone is known
       hero.hidden = false;
     } catch (e) {
-      scene.innerHTML = weatherSceneMarkup(0, visual, '', label + moonText, moonInfo, isSouthern);
+      scene.innerHTML = weatherSceneMarkup(0, visual, '', label + phaseTimeSuffix + moonText, moonInfo, isSouthern);
       locationTzName = null;
       updateLocationClock();
       update();
