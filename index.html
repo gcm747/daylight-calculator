@@ -1321,9 +1321,10 @@
   // A sun sitting low near the horizon with a soft glow behind it, for the
   // dawn/dusk transition window — no rays, since it reads more like a
   // rising/setting sun than a midday one.
-  function horizonSunGroup(cx, cy, r, color){
+  function horizonSunGroup(cx, cy, r, color, glowOpacity){
+    if (glowOpacity == null) glowOpacity = 0.22;
     return '<g>' +
-      '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*1.7)+'" fill="'+color+'" opacity="0.22"/>' +
+      '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*1.7)+'" fill="'+color+'" opacity="'+glowOpacity+'"/>' +
       '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+color+'"/>' +
       '</g>';
   }
@@ -1401,7 +1402,7 @@
   // whatever combination of sun/moon, cloud, rain, snow, fog or lightning
   // suits the current conditions — similar in spirit to a BOM-style weather
   // summary graphic, rather than a small static icon.
-  function weatherSceneMarkup(code, phase, tempStr, descStr, moonInfo, isSouthern){
+  function weatherSceneMarkup(code, phase, tempStr, descStr, moonInfo, isSouthern, phaseKey){
     const W = 340, H = 160;
     const bucket = weatherBucket(code);
     const ink = '#16233E';
@@ -1427,7 +1428,18 @@
     const sunCx = 250, sunCy = 52;
 
     function celestial(r){
-      if (isTwilight) return horizonSunGroup(sunCx, 122, r*0.85, horizonSun);
+      if (isTwilight){
+        // Dawn/Dusk sit further below the horizon astronomically (-6° to
+        // -3.4°) than Sunrise/Sunset (-3.4° to -0.8°) — the illustration
+        // now reflects that: lower, smaller, dimmer for Dawn/Dusk, higher,
+        // fuller, brighter for Sunrise/Sunset, right at the edge of
+        // emerging. Previously both pairs rendered identically.
+        const nearHorizon = (phaseKey === 'sunrise' || phaseKey === 'sunset');
+        const hCy = nearHorizon ? 108 : 138;
+        const hR = r * (nearHorizon ? 0.95 : 0.6);
+        const hGlow = nearHorizon ? 0.26 : 0.14;
+        return horizonSunGroup(sunCx, hCy, hR*0.85, horizonSun, hGlow);
+      }
       if (phase === 'day') return sunGroup(sunCx, sunCy, r, sun, true);
       if (moonInfo) return moonPhaseShape(sunCx, sunCy, r*0.87, moonInfo.illumination, moonInfo.waxing, moon, moonShadow, isSouthern);
       return moonGroup(sunCx, sunCy, r*0.87, moon); // fallback if phase info isn't available for some reason
@@ -1536,13 +1548,13 @@
       const data = await res.json();
       const temp = Math.round(data.current.temperature_2m);
       const code = data.current.weather_code;
-      scene.innerHTML = weatherSceneMarkup(code, visual, temp + '°C', label + ' · ' + weatherDescription(code) + moonText, moonInfo, isSouthern);
+      scene.innerHTML = weatherSceneMarkup(code, visual, temp + '°C', label + ' · ' + weatherDescription(code) + moonText, moonInfo, isSouthern, phaseKey);
       locationTzName = data.timezone || null;
       updateLocationClock();
       update(); // day timeline/chart may have rendered with the fallback estimate before this resolved — refresh with accurate DST-aware times now that the real timezone is known
       hero.hidden = false;
     } catch (e) {
-      scene.innerHTML = weatherSceneMarkup(0, visual, '', label + moonText, moonInfo, isSouthern);
+      scene.innerHTML = weatherSceneMarkup(0, visual, '', label + moonText, moonInfo, isSouthern, phaseKey);
       locationTzName = null;
       updateLocationClock();
       update();
