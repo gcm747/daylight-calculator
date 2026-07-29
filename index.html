@@ -574,7 +574,7 @@
     }
 
     const sun = crossing(90.833);
-    const civil = crossing(96);
+    const civil = crossing(96); // civil twilight (-6°/zenith 96°) — the standard convention used for daylight hours
 
     const polar = sun.state === 'never-above' ? 'night' : sun.state === 'never-below' ? 'day' : null;
     const dayLengthHours = polar === 'day' ? 24 : polar === 'night' ? 0 : 2 * sun.H0deg / 15;
@@ -1259,6 +1259,10 @@
     // before the Day Timeline's own displayed sunset time. The twilight
     // midpoint is recomputed to match, staying true to the original
     // 'split the twilight band exactly in half' design.
+    //
+    // CIVIL_ALT uses civil twilight (-6°) — the standard convention most
+    // systems use for daylight hours, matching computeDaily's 'civil'
+    // crossing above so the two stay in sync.
     const CIVIL_ALT = -6, HORIZON_ALT = -0.833;
     const TWILIGHT_MID = (CIVIL_ALT + HORIZON_ALT) / 2;
 
@@ -1409,9 +1413,9 @@
     // rain, fog etc. look much the same regardless of exactly how low the
     // sun is, since it isn't visible in those conditions anyway.
     const SKY = {
-      clear:        { day:['#FCEAB4','#7FC8F0'], night:['#C7CFEA','#4C5D96'], dawn:['#FBC89A','#8FC7EA'], dusk:['#F2A97E','#5F76A8'] },
-      mostlyClear:  { day:['#F8E9C0','#93D0EE'], night:['#CBD1E8','#556A9C'], dawn:['#F6CBA0','#9BCBE8'], dusk:['#EDAE86','#6879A6'] },
-      partlyCloudy: { day:['#F0EBDD','#A9CEE2'], night:['#D2D6E6','#6C7A9E'], dawn:['#EFD3B4','#AACBE0'], dusk:['#E4B497','#7686A8'] },
+      clear:        { day:['#FCEAB4','#7FC8F0'], night:['#C7CFEA','#4C5D96'], dawn:['#8FC7EA','#FBC89A'], dusk:['#5F76A8','#F2A97E'] },
+      mostlyClear:  { day:['#F8E9C0','#93D0EE'], night:['#CBD1E8','#556A9C'], dawn:['#9BCBE8','#F6CBA0'], dusk:['#6879A6','#EDAE86'] },
+      partlyCloudy: { day:['#F0EBDD','#A9CEE2'], night:['#D2D6E6','#6C7A9E'], dawn:['#AACBE0','#EFD3B4'], dusk:['#7686A8','#E4B497'] },
       overcast:     ['#E6E9EC','#C6CBD3'],
       fog:          ['#EAECED','#D2D5D8'],
       rain:         ['#D9E3EA','#95AABC'],
