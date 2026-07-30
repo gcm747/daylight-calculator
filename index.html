@@ -1449,7 +1449,14 @@
       pts.push((cx + bulgeSign*rx*Math.cos(a)).toFixed(2) + ',' + (cy + r*Math.sin(a)).toFixed(2));
     }
     const path = 'M ' + pts.join(' L ') + ' Z';
-    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + darkColor + '"/>' +
+    // Soft glow behind the disc — the sun's rays give it roughly double
+    // this footprint at the same nominal radius; the moon had nothing
+    // equivalent, which is why night scenes could feel sparse. Scaled by
+    // illumination so a thin crescent gets a modest glow and a near-full
+    // moon gets a fuller one, rather than a flat glow regardless of phase.
+    const glowOpacity = 0.06 + illumFrac * 0.18;
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r*1.7) + '" fill="' + litColor + '" opacity="' + glowOpacity.toFixed(2) + '"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + darkColor + '"/>' +
       '<path d="' + path + '" fill="' + litColor + '"/>';
   }
 
@@ -1510,10 +1517,10 @@
       if (phase === 'night') s += '<circle cx="200" cy="30" r="1.4" fill="#FFF"/><circle cx="288" cy="72" r="1" fill="#FFF"/><circle cx="220" cy="82" r="1" fill="#FFF"/>';
     } else if (bucket === 'mostlyClear'){
       s += celestial(30);
-      s += cloudGroup(258, 94, 0.55, cloudLight);
+      s += cloudGroup(258, 94, 0.72, cloudLight);
     } else if (bucket === 'partlyCloudy'){
       s += celestial(28);
-      s += cloudGroup(228, 86, 0.85, cloudLight);
+      s += cloudGroup(228, 86, 0.98, cloudLight);
     } else if (bucket === 'overcast'){
       s += cloudGroup(150, 58, 1.15, cloudMid) + cloudGroup(252, 90, 0.9, cloudMid);
     } else if (bucket === 'fog'){
@@ -1569,10 +1576,10 @@
       s += sunGroup(sunCx, sunCy, 30, sun, true);
     } else if (bucket === 'mostlyClear'){
       s += sunGroup(sunCx, sunCy, 30, sun, true);
-      s += cloudGroup(258, 94, 0.55, cloudLight);
+      s += cloudGroup(258, 94, 0.72, cloudLight);
     } else if (bucket === 'partlyCloudy'){
       s += sunGroup(sunCx, sunCy, 28, sun, true);
-      s += cloudGroup(228, 86, 0.85, cloudLight);
+      s += cloudGroup(228, 86, 0.98, cloudLight);
     } else if (bucket === 'overcast'){
       s += cloudGroup(150, 58, 1.15, cloudMid) + cloudGroup(252, 90, 0.9, cloudMid);
     } else if (bucket === 'fog'){
