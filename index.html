@@ -1614,7 +1614,7 @@
     const [y, m, d] = dateISO.split('-').map(Number);
     const dateStr = MONTH_NAMES[m-1] + ' ' + d;
     if (slideIndex === 0) return 'Today, ' + dateStr;
-    if (slideIndex === 1) return 'Tomorrow, ' + dateStr;
+    if (slideIndex === 1) return 'Tomorrow';
     const dow = new Date(Date.UTC(y, m-1, d)).getUTCDay();
     return DAY_NAMES[dow] + ', ' + dateStr;
   }
