@@ -1599,7 +1599,7 @@
     // place of the phase/condition description.
     s += '<text x="24" y="120" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
       Math.round(tempMax) + '°<tspan font-size="20" opacity="0.55" dx="8">/ ' + Math.round(tempMin) + '°</tspan></text>';
-    s += '<text x="26" y="141" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+dateLabel+'</text>';
+    s += '<text x="26" y="141" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+dateLabel+' · '+weatherDescription(code)+'</text>';
     return s;
   }
 
@@ -1614,7 +1614,7 @@
     const [y, m, d] = dateISO.split('-').map(Number);
     const dateStr = MONTH_NAMES[m-1] + ' ' + d;
     if (slideIndex === 0) return 'Today, ' + dateStr;
-    if (slideIndex === 1) return 'Tomorrow';
+    if (slideIndex === 1) return 'Tomorrow, ' + dateStr;
     const dow = new Date(Date.UTC(y, m-1, d)).getUTCDay();
     return DAY_NAMES[dow] + ', ' + dateStr;
   }
