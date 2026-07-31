@@ -1377,10 +1377,11 @@
   // A sun sitting low near the horizon with a soft glow behind it, for the
   // dawn/dusk transition window — no rays, since it reads more like a
   // rising/setting sun than a midday one.
-  function horizonSunGroup(cx, cy, r, color, glowOpacity){
+  function horizonSunGroup(cx, cy, r, color, glowOpacity, glowScale){
     if (glowOpacity == null) glowOpacity = 0.22;
+    if (glowScale == null) glowScale = 1.7;
     return '<g>' +
-      '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*1.7)+'" fill="'+color+'" opacity="'+glowOpacity+'"/>' +
+      '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*glowScale)+'" fill="'+color+'" opacity="'+glowOpacity+'"/>' +
       '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+color+'"/>' +
       '</g>';
   }
@@ -1499,7 +1500,8 @@
         const hCy = nearHorizon ? 108 : 138;
         const hR = r * (nearHorizon ? 0.95 : 0.78);
         const hGlow = nearHorizon ? 0.26 : 0.14;
-        return horizonSunGroup(sunCx, hCy, hR*0.85, horizonSun, hGlow);
+        const hGlowScale = nearHorizon ? 1.7 : 0.85;
+        return horizonSunGroup(sunCx, hCy, hR*0.85, horizonSun, hGlow, hGlowScale);
       }
       if (phase === 'day') return sunGroup(sunCx, sunCy, r, sun, true);
       if (moonInfo) return moonPhaseShape(sunCx, sunCy, r, moonInfo.illumination, moonInfo.waxing, moon, moonShadow, isSouthern);
@@ -1544,11 +1546,15 @@
     // point of a *live* view. High/low is real, useful context, but stays
     // clearly secondary rather than displacing it. Kept below the temp
     // (not above) to stay out of the zone icons extend down into.
-    s += '<text x="24" y="'+(hasHighLow?110:120)+'" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+'</text>';
+    s += '<text x="24" y="'+(hasHighLow?105:115)+'" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+'</text>';
     if (hasHighLow){
-      s += '<text x="26" y="130" font-family="\'Space Grotesk\', sans-serif" font-size="15" font-weight="500" fill="'+ink+'" opacity="0.6">H:'+Math.round(todayHigh)+'°  L:'+Math.round(todayLow)+'°</text>';
+      s += '<text x="26" y="123" font-family="\'Space Grotesk\', sans-serif" font-size="15" font-weight="500" fill="'+ink+'" opacity="0.6">H:'+Math.round(todayHigh)+'°  L:'+Math.round(todayLow)+'°</text>';
     }
-    s += '<text x="26" y="'+(hasHighLow?149:141)+'" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+truncateToWidth(descStr, 150, 13, "'Space Grotesk', sans-serif")+'</text>';
+    const descLines = wrapToWidth(descStr, 150, 13, "'Space Grotesk', sans-serif", 2);
+    const descStartY = hasHighLow ? 139 : 136;
+    descLines.forEach((line, i) => {
+      s += '<text x="26" y="'+(descStartY + i*14)+'" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+line+'</text>';
+    });
     return s;
   }
 
@@ -1612,7 +1618,10 @@
     // place of the phase/condition description.
     s += '<text x="24" y="120" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
       Math.round(tempMax) + '°<tspan font-size="20" opacity="0.55" dx="8">/ ' + Math.round(tempMin) + '°</tspan></text>';
-    s += '<text x="26" y="141" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+truncateToWidth(dateLabel+' · '+weatherDescription(code), 150, 13, "'Space Grotesk', sans-serif")+'</text>';
+    const fcLines = wrapToWidth(dateLabel+' · '+weatherDescription(code), 150, 13, "'Space Grotesk', sans-serif", 2);
+    fcLines.forEach((line, i) => {
+      s += '<text x="26" y="'+(141 + i*14)+'" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+line+'</text>';
+    });
     return s;
   }
 
@@ -1628,18 +1637,43 @@
   // character counts — guarantees the description line can never actually
   // reach into the icon's space, regardless of how long a condition name
   // or date happens to be.
-  function truncateToWidth(text, maxWidthPx, fontSize, fontFamily){
-    if (!truncateToWidth._canvas) truncateToWidth._canvas = document.createElement('canvas');
-    const ctx = truncateToWidth._canvas.getContext('2d');
+  // Wraps text across up to maxLines lines, each kept within maxWidthPx —
+  // using real canvas measurement, not guessed character counts. This is
+  // what keeps the description fully visible (nothing hidden) while still
+  // guaranteeing it never physically reaches into the icon's space: it
+  // uses the card's spare vertical room for a second line instead of
+  // competing with the icon for the same horizontal band. Only truncates
+  // (with an ellipsis) as a last resort if content still doesn't fit even
+  // across maxLines — real app content never actually hits this.
+  function wrapToWidth(text, maxWidthPx, fontSize, fontFamily, maxLines){
+    if (!wrapToWidth._canvas) wrapToWidth._canvas = document.createElement('canvas');
+    const ctx = wrapToWidth._canvas.getContext('2d');
     ctx.font = fontSize + 'px ' + fontFamily;
-    if (ctx.measureText(text).width <= maxWidthPx) return text;
-    let lo = 0, hi = text.length;
-    while (lo < hi){
-      const mid = Math.ceil((lo + hi) / 2);
-      if (ctx.measureText(text.slice(0, mid) + '…').width <= maxWidthPx) lo = mid;
-      else hi = mid - 1;
+    const words = text.split(' ');
+    const lines = [];
+    let current = '';
+    for (const word of words){
+      const attempt = current ? current + ' ' + word : word;
+      if (ctx.measureText(attempt).width <= maxWidthPx){
+        current = attempt;
+      } else {
+        if (current) lines.push(current);
+        current = word;
+      }
+      if (lines.length === maxLines - 1 && current !== attempt){
+        // Reserve the final line — nothing more can be added, so let the
+        // truncation fallback below handle whatever's left.
+      }
     }
-    return text.slice(0, lo).trimEnd() + '…';
+    if (current) lines.push(current);
+    if (lines.length <= maxLines) return lines;
+    const kept = lines.slice(0, maxLines);
+    let lastLine = kept[maxLines - 1];
+    while (lastLine.length > 0 && ctx.measureText(lastLine + '…').width > maxWidthPx){
+      lastLine = lastLine.slice(0, -1);
+    }
+    kept[maxLines - 1] = lastLine.trimEnd() + '…';
+    return kept;
   }
 
   function forecastDayLabel(dateISO, slideIndex){
