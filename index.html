@@ -1539,11 +1539,20 @@
       s += '<path d="M206,101 L189,129 L203,129 L186,156" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
-    const highLowText = (todayHigh != null && todayLow != null)
-      ? '<tspan font-size="16" font-weight="500" opacity="0.55" dx="10">H:' + Math.round(todayHigh) + '° L:' + Math.round(todayLow) + '°</tspan>'
-      : '';
-    s += '<text x="24" y="120" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+highLowText+'</text>';
-    s += '<text x="26" y="141" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+descStr+'</text>';
+    const hasHighLow = todayHigh != null && todayLow != null;
+    if (hasHighLow){
+      // Same position, size and style as the forecast cards' big number —
+      // so swiping between the live view and any forecast day lands your
+      // eye on High/Low in exactly the same spot every time. Current temp
+      // moves into the description line below instead, since it's the one
+      // piece of information forecast cards don't have.
+      s += '<text x="24" y="120" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
+        Math.round(todayHigh) + '°<tspan font-size="20" opacity="0.55" dx="8">/ ' + Math.round(todayLow) + '°</tspan></text>';
+      s += '<text x="26" y="141" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+tempStr+' now · '+descStr+'</text>';
+    } else {
+      s += '<text x="24" y="120" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+'</text>';
+      s += '<text x="26" y="141" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+descStr+'</text>';
+    }
     return s;
   }
 
