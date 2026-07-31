@@ -1454,9 +1454,7 @@
     // equivalent, which is why night scenes could feel sparse. Scaled by
     // illumination so a thin crescent gets a modest glow and a near-full
     // moon gets a fuller one, rather than a flat glow regardless of phase.
-    const glowOpacity = 0.06 + illumFrac * 0.18;
-    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r*1.7) + '" fill="' + litColor + '" opacity="' + glowOpacity.toFixed(2) + '"/>' +
-      '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + darkColor + '"/>' +
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + darkColor + '"/>' +
       '<path d="' + path + '" fill="' + litColor + '"/>';
   }
 
@@ -1465,7 +1463,7 @@
   // whatever combination of sun/moon, cloud, rain, snow, fog or lightning
   // suits the current conditions — similar in spirit to a BOM-style weather
   // summary graphic, rather than a small static icon.
-  function weatherSceneMarkup(code, phase, tempStr, descStr, moonInfo, isSouthern, phaseKey){
+  function weatherSceneMarkup(code, phase, tempStr, descStr, moonInfo, isSouthern, phaseKey, todayHigh, todayLow){
     const W = 340, H = 160;
     const bucket = weatherBucket(code);
     const ink = '#16233E';
@@ -1504,8 +1502,8 @@
         return horizonSunGroup(sunCx, hCy, hR*0.85, horizonSun, hGlow);
       }
       if (phase === 'day') return sunGroup(sunCx, sunCy, r, sun, true);
-      if (moonInfo) return moonPhaseShape(sunCx, sunCy, r*0.87, moonInfo.illumination, moonInfo.waxing, moon, moonShadow, isSouthern);
-      return moonGroup(sunCx, sunCy, r*0.87, moon); // fallback if phase info isn't available for some reason
+      if (moonInfo) return moonPhaseShape(sunCx, sunCy, r, moonInfo.illumination, moonInfo.waxing, moon, moonShadow, isSouthern);
+      return moonGroup(sunCx, sunCy, r, moon); // fallback if phase info isn't available for some reason
     }
 
     let s = '<defs><linearGradient id="wxsky" x1="0" y1="0" x2="0" y2="1">' +
@@ -1541,7 +1539,10 @@
       s += '<path d="M206,101 L189,129 L203,129 L186,156" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
-    s += '<text x="24" y="120" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+'</text>';
+    const highLowText = (todayHigh != null && todayLow != null)
+      ? '<tspan font-size="16" font-weight="500" opacity="0.55" dx="10">H:' + Math.round(todayHigh) + '° L:' + Math.round(todayLow) + '°</tspan>'
+      : '';
+    s += '<text x="24" y="120" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+highLowText+'</text>';
     s += '<text x="26" y="141" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+descStr+'</text>';
     return s;
   }
@@ -1744,7 +1745,9 @@
       const data = await res.json();
       const temp = Math.round(data.current.temperature_2m);
       const code = data.current.weather_code;
-      scene.innerHTML = weatherSceneMarkup(code, visual, temp + '°C', label + ' · ' + weatherDescription(code) + moonText, moonInfo, isSouthern, phaseKey);
+      const todayHigh = data.daily && data.daily.temperature_2m_max ? data.daily.temperature_2m_max[0] : null;
+      const todayLow = data.daily && data.daily.temperature_2m_min ? data.daily.temperature_2m_min[0] : null;
+      scene.innerHTML = weatherSceneMarkup(code, visual, temp + '°C', label + ' · ' + weatherDescription(code) + moonText, moonInfo, isSouthern, phaseKey, todayHigh, todayLow);
       renderForecastSlides(data.daily);
       locationTzName = data.timezone || null;
       updateLocationClock();
