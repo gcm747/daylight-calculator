@@ -1540,8 +1540,9 @@
         '<circle cx="171" cy="98" r="2.2"/><circle cx="196" cy="104" r="2.2"/>' +
         '<circle cx="220" cy="96" r="2.2"/><circle cx="242" cy="105" r="2.2"/></g>';
     } else if (bucket === 'storm'){
-      s += cloudGroup(220, 46, 1.1, cloudDark);
-      s += '<path d="M230,84 L216,107 L228,107 L214,130" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += cloudGroup(215, 44, 1.15, cloudDark) + cloudGroup(258, 68, 0.8, cloudMid);
+      s += '<path d="M225,82 L211,105 L223,105 L209,128" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += '<path d="M256,94 L244,115 L254,115 L242,134" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
     const hasHighLow = todayHigh != null && todayLow != null;
@@ -1608,8 +1609,9 @@
         '<circle cx="171" cy="98" r="2.2"/><circle cx="196" cy="104" r="2.2"/>' +
         '<circle cx="220" cy="96" r="2.2"/><circle cx="242" cy="105" r="2.2"/></g>';
     } else if (bucket === 'storm'){
-      s += cloudGroup(220, 46, 1.1, cloudDark);
-      s += '<path d="M230,84 L216,107 L228,107 L214,130" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += cloudGroup(215, 44, 1.15, cloudDark) + cloudGroup(258, 68, 0.8, cloudMid);
+      s += '<path d="M225,82 L211,105 L223,105 L209,128" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += '<path d="M256,94 L244,115 L254,115 L242,134" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
     // 2 lines: the high/low number, then date and condition combined on
