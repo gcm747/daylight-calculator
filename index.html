@@ -90,15 +90,18 @@
     display:flex;
     width:100%;
     height:100%;
+    position:relative;
+    z-index:1;
     transition:transform 0.3s ease;
   }
   .weather-track svg{flex:0 0 100%; width:100%; height:100%; display:block;}
   .weather-nav-btn{
     position:absolute;
+    z-index:5;
     top:50%;
     transform:translateY(-50%);
-    width:30px;
-    height:30px;
+    width:40px;
+    height:40px;
     border-radius:50%;
     background:rgba(255,255,255,0.55);
     border:none;
@@ -481,8 +484,8 @@
       <div class="weather-track" id="weather-track">
         <svg id="weather-scene" viewBox="0 0 340 180" preserveAspectRatio="xMidYMid slice"></svg>
       </div>
-      <button class="weather-nav-btn weather-nav-prev" id="weather-prev" type="button" aria-label="Previous day" hidden>&#8249;</button>
-      <button class="weather-nav-btn weather-nav-next" id="weather-next" type="button" aria-label="Next day" hidden>&#8250;</button>
+      <div class="weather-nav-btn weather-nav-prev" id="weather-prev" role="button" tabindex="0" aria-label="Previous day" hidden>&#8249;</div>
+      <div class="weather-nav-btn weather-nav-next" id="weather-next" role="button" tabindex="0" aria-label="Next day" hidden>&#8250;</div>
     </div>
     <div class="weather-dots" id="weather-dots" hidden></div>
   </header>
@@ -1991,6 +1994,14 @@
   // not a replacement for it.
   $('weather-prev').addEventListener('click', () => goToWeatherSlide(weatherSlideIndex - 1));
   $('weather-next').addEventListener('click', () => goToWeatherSlide(weatherSlideIndex + 1));
+  function navKeyHandler(e, dir){
+    if (e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      goToWeatherSlide(weatherSlideIndex + dir);
+    }
+  }
+  $('weather-prev').addEventListener('keydown', e => navKeyHandler(e, -1));
+  $('weather-next').addEventListener('keydown', e => navKeyHandler(e, 1));
 
   (function(){
     const hero = $('weather-hero');
