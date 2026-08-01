@@ -1383,13 +1383,8 @@
   // A sun sitting low near the horizon with a soft glow behind it, for the
   // dawn/dusk transition window — no rays, since it reads more like a
   // rising/setting sun than a midday one.
-  function horizonSunGroup(cx, cy, r, color, glowOpacity, glowScale){
-    if (glowOpacity == null) glowOpacity = 0.22;
-    if (glowScale == null) glowScale = 1.7;
-    return '<g>' +
-      '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*glowScale)+'" fill="'+color+'" opacity="'+glowOpacity+'"/>' +
-      '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+color+'"/>' +
-      '</g>';
+  function horizonSunGroup(cx, cy, r, color){
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+color+'"/>';
   }
 
   // Crescent moon as a single filled path (two arcs) rather than a
@@ -1499,15 +1494,14 @@
       if (isTwilight){
         // Dawn/Dusk sit further below the horizon astronomically (-6° to
         // -3.4°) than Sunrise/Sunset (-3.4° to -0.8°) — the illustration
-        // now reflects that: lower, smaller, dimmer for Dawn/Dusk, higher,
-        // fuller, brighter for Sunrise/Sunset, right at the edge of
-        // emerging. Previously both pairs rendered identically.
+        // now reflects that: lower, smaller for Dawn/Dusk, higher, fuller
+        // for Sunrise/Sunset, right at the edge of emerging — size alone
+        // carries the distinction, matching the plain-circle style used
+        // for Day and Night.
         const nearHorizon = (phaseKey === 'sunrise' || phaseKey === 'sunset');
         const hCy = nearHorizon ? 108 : 130;
         const hR = r * (nearHorizon ? 0.95 : 0.63);
-        const hGlow = nearHorizon ? 0.26 : 0.14;
-        const hGlowScale = nearHorizon ? 1.55 : 0.7;
-        return horizonSunGroup(sunCx, hCy, hR*0.85, horizonSun, hGlow, hGlowScale);
+        return horizonSunGroup(sunCx, hCy, hR*0.85, horizonSun);
       }
       if (phase === 'day') return sunGroup(sunCx, sunCy, r, sun, true);
       if (moonInfo) return moonPhaseShape(sunCx, sunCy, r, moonInfo.illumination, moonInfo.waxing, moon, moonShadow, isSouthern);
