@@ -1562,7 +1562,7 @@
   // Reuses the exact same building blocks as the live scene (weatherBucket,
   // cloudGroup, sunGroup) so forecast cards feel like the same visual
   // language, not a different mini-app bolted on.
-  function forecastSceneMarkup(code, tempMax, tempMin, dateLabel){
+  function forecastSceneMarkup(code, tempMax, tempMin, dateLabel, slideIndex){
     const W = 340, H = 180;
     const bucket = weatherBucket(code);
     const ink = '#16233E';
@@ -1578,9 +1578,9 @@
     const [c1, c2] = SKY_DAY[bucket];
     const sunCx = 225, sunCy = 52;
 
-    let s = '<defs><linearGradient id="fcsky" x1="0" y1="0" x2="0" y2="1">' +
+    let s = '<defs><linearGradient id="fcsky'+slideIndex+'" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0%" stop-color="'+c1+'"/><stop offset="100%" stop-color="'+c2+'"/></linearGradient></defs>';
-    s += '<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="url(#fcsky)"/>';
+    s += '<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="url(#fcsky'+slideIndex+')"/>';
 
     if (bucket === 'clear'){
       s += sunGroup(sunCx, sunCy, 37, sun, true);
@@ -1720,7 +1720,7 @@
         svg.setAttribute('viewBox', '0 0 340 180');
         svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
         const dayLabel = forecastDayLabel(dailyData.time[i], i);
-        svg.innerHTML = forecastSceneMarkup(dailyData.weather_code[i], dailyData.temperature_2m_max[i], dailyData.temperature_2m_min[i], dayLabel);
+        svg.innerHTML = forecastSceneMarkup(dailyData.weather_code[i], dailyData.temperature_2m_max[i], dailyData.temperature_2m_min[i], dayLabel, i);
         track.appendChild(svg);
       }
     }
