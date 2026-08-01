@@ -1500,10 +1500,10 @@
         // fuller, brighter for Sunrise/Sunset, right at the edge of
         // emerging. Previously both pairs rendered identically.
         const nearHorizon = (phaseKey === 'sunrise' || phaseKey === 'sunset');
-        const hCy = nearHorizon ? 108 : 138;
-        const hR = r * (nearHorizon ? 0.95 : 0.78);
+        const hCy = nearHorizon ? 108 : 130;
+        const hR = r * (nearHorizon ? 0.95 : 0.63);
         const hGlow = nearHorizon ? 0.26 : 0.14;
-        const hGlowScale = nearHorizon ? 1.55 : 0.85;
+        const hGlowScale = nearHorizon ? 1.55 : 0.7;
         return horizonSunGroup(sunCx, hCy, hR*0.85, horizonSun, hGlow, hGlowScale);
       }
       if (phase === 'day') return sunGroup(sunCx, sunCy, r, sun, true);
@@ -1520,29 +1520,28 @@
       if (phase === 'night') s += '<circle cx="175" cy="30" r="1.4" fill="#FFF"/><circle cx="263" cy="72" r="1" fill="#FFF"/><circle cx="195" cy="82" r="1" fill="#FFF"/>';
     } else if (bucket === 'mostlyClear'){
       s += celestial(37);
-      s += cloudGroup(233, 100, 0.9, cloudLight);
+      s += cloudGroup(213, 100, 0.9, cloudLight);
     } else if (bucket === 'partlyCloudy'){
       s += celestial(35);
-      s += cloudGroup(225, 84, 1.02, cloudLight);
+      s += cloudGroup(205, 84, 1.02, cloudLight);
     } else if (bucket === 'overcast'){
-      s += cloudGroup(190, 44, 1.15, cloudMid) + cloudGroup(253, 86, 0.94, cloudMid);
+      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudMid);
     } else if (bucket === 'fog'){
       s += '<g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.75">' +
-        '<line x1="155" y1="28" x2="290" y2="28"/><line x1="170" y1="50" x2="295" y2="50"/><line x1="180" y1="72" x2="299" y2="72"/></g>';
+        '<line x1="135" y1="28" x2="270" y2="28"/><line x1="150" y1="50" x2="275" y2="50"/><line x1="160" y1="72" x2="279" y2="72"/></g>';
     } else if (bucket === 'rain'){
-      s += cloudGroup(192, 46, 1.12, cloudMid) + cloudGroup(263, 70, 0.72, cloudLight);
+      s += cloudGroup(172, 46, 1.12, cloudMid) + cloudGroup(243, 70, 0.72, cloudLight);
       s += '<g stroke="'+ink+'" stroke-width="2.4" stroke-linecap="round" opacity="0.5">' +
         '<line x1="171" y1="88" x2="163" y2="105"/><line x1="195" y1="91" x2="187" y2="111"/>' +
         '<line x1="219" y1="88" x2="211" y2="105"/><line x1="242" y1="93" x2="234" y2="113"/></g>';
     } else if (bucket === 'snow'){
-      s += cloudGroup(192, 46, 1.12, cloudMid) + cloudGroup(263, 70, 0.72, cloudLight);
+      s += cloudGroup(172, 46, 1.12, cloudMid) + cloudGroup(243, 70, 0.72, cloudLight);
       s += '<g fill="'+ink+'" opacity="0.5">' +
         '<circle cx="171" cy="98" r="2.2"/><circle cx="196" cy="104" r="2.2"/>' +
         '<circle cx="220" cy="96" r="2.2"/><circle cx="242" cy="105" r="2.2"/></g>';
     } else if (bucket === 'storm'){
-      s += cloudGroup(215, 44, 1.15, cloudDark) + cloudGroup(258, 68, 0.8, cloudMid);
-      s += '<path d="M225,82 L211,105 L223,105 L209,128" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
-      s += '<path d="M256,94 L244,115 L254,115 L242,134" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += cloudGroup(170, 42, 1.15, cloudDark) + cloudGroup(268, 70, 0.7, cloudDark);
+      s += '<path d="M180,80 L166,103 L178,103 L164,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
     const hasHighLow = todayHigh != null && todayLow != null;
@@ -1589,29 +1588,28 @@
       s += sunGroup(sunCx, sunCy, 37, sun, true);
     } else if (bucket === 'mostlyClear'){
       s += sunGroup(sunCx, sunCy, 37, sun, true);
-      s += cloudGroup(233, 100, 0.9, cloudLight);
+      s += cloudGroup(213, 100, 0.9, cloudLight);
     } else if (bucket === 'partlyCloudy'){
       s += sunGroup(sunCx, sunCy, 35, sun, true);
-      s += cloudGroup(225, 84, 1.02, cloudLight);
+      s += cloudGroup(205, 84, 1.02, cloudLight);
     } else if (bucket === 'overcast'){
-      s += cloudGroup(190, 44, 1.15, cloudMid) + cloudGroup(253, 86, 0.94, cloudMid);
+      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudMid);
     } else if (bucket === 'fog'){
       s += '<g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.75">' +
-        '<line x1="155" y1="28" x2="290" y2="28"/><line x1="170" y1="50" x2="295" y2="50"/><line x1="180" y1="72" x2="299" y2="72"/></g>';
+        '<line x1="135" y1="28" x2="270" y2="28"/><line x1="150" y1="50" x2="275" y2="50"/><line x1="160" y1="72" x2="279" y2="72"/></g>';
     } else if (bucket === 'rain'){
-      s += cloudGroup(192, 46, 1.12, cloudMid) + cloudGroup(263, 70, 0.72, cloudLight);
+      s += cloudGroup(172, 46, 1.12, cloudMid) + cloudGroup(243, 70, 0.72, cloudLight);
       s += '<g stroke="'+ink+'" stroke-width="2.4" stroke-linecap="round" opacity="0.5">' +
         '<line x1="171" y1="88" x2="163" y2="105"/><line x1="195" y1="91" x2="187" y2="111"/>' +
         '<line x1="219" y1="88" x2="211" y2="105"/><line x1="242" y1="93" x2="234" y2="113"/></g>';
     } else if (bucket === 'snow'){
-      s += cloudGroup(192, 46, 1.12, cloudMid) + cloudGroup(263, 70, 0.72, cloudLight);
+      s += cloudGroup(172, 46, 1.12, cloudMid) + cloudGroup(243, 70, 0.72, cloudLight);
       s += '<g fill="'+ink+'" opacity="0.5">' +
         '<circle cx="171" cy="98" r="2.2"/><circle cx="196" cy="104" r="2.2"/>' +
         '<circle cx="220" cy="96" r="2.2"/><circle cx="242" cy="105" r="2.2"/></g>';
     } else if (bucket === 'storm'){
-      s += cloudGroup(215, 44, 1.15, cloudDark) + cloudGroup(258, 68, 0.8, cloudMid);
-      s += '<path d="M225,82 L211,105 L223,105 L209,128" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
-      s += '<path d="M256,94 L244,115 L254,115 L242,134" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += cloudGroup(170, 42, 1.15, cloudDark) + cloudGroup(268, 70, 0.7, cloudDark);
+      s += '<path d="M180,80 L166,103 L178,103 L164,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
     // 2 lines: the high/low number, then date and condition combined on
