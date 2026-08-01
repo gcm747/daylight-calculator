@@ -1613,10 +1613,10 @@
     // one line — positioned below where any forecast icon can reach
     // (measured worst case: 130px), so it can safely use nearly the full
     // card width and never needs to wrap or truncate.
-    s += '<text x="24" y="125" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
+    s += '<text x="24" y="145" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
       Math.round(tempMax) + '°<tspan font-size="20" opacity="0.55" dx="8">/ ' + Math.round(tempMin) + '°</tspan></text>';
     const fcLine = wrapToWidth(dateLabel+' · '+weatherDescription(code), 300, 13, "'Space Grotesk', sans-serif", 1)[0];
-    s += '<text x="26" y="148" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+fcLine+'</text>';
+    s += '<text x="26" y="168" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+fcLine+'</text>';
     return s;
   }
 
