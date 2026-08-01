@@ -1609,18 +1609,14 @@
       s += '<path d="M255,84 L241,107 L253,107 L239,130" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
-    // 3 lines, always: the high/low number, the date, and the condition —
-    // kept as separate lines rather than one combined string, since each
-    // on its own is short enough to comfortably stay on a single line.
-    const dateLines = wrapToWidth(dateLabel, 150, 13, "'Space Grotesk', sans-serif", 2);
-    const condLines = wrapToWidth(weatherDescription(code), 150, 13, "'Space Grotesk', sans-serif", 2);
-    const extraLines = Math.max(0, (dateLines.length + condLines.length) - 2);
-    const fcShift = extraLines * 16;
-    s += '<text x="24" y="'+(110-fcShift)+'" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
+    // 2 lines: the high/low number, then date and condition combined on
+    // one line — positioned below where any forecast icon can reach
+    // (measured worst case: 130px), so it can safely use nearly the full
+    // card width and never needs to wrap or truncate.
+    s += '<text x="24" y="115" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
       Math.round(tempMax) + '°<tspan font-size="20" opacity="0.55" dx="8">/ ' + Math.round(tempMin) + '°</tspan></text>';
-    let y = 138 - fcShift;
-    dateLines.forEach(line => { s += '<text x="26" y="'+y+'" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+line+'</text>'; y += 16; });
-    condLines.forEach(line => { s += '<text x="26" y="'+y+'" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+line+'</text>'; y += 16; });
+    const fcLine = wrapToWidth(dateLabel+' · '+weatherDescription(code), 300, 13, "'Space Grotesk', sans-serif", 1)[0];
+    s += '<text x="26" y="150" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+fcLine+'</text>';
     return s;
   }
 
