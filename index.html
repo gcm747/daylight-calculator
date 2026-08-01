@@ -1357,12 +1357,14 @@
   // A soft puffy cloud built from overlapping same-colour shapes (no seams),
   // reusable at any position/size/colour.
   function cloudGroup(cx, cy, scale, color){
-    return '<g transform="translate('+cx+','+cy+') scale('+scale+')" fill="'+color+'">' +
-      '<ellipse cx="0" cy="12" rx="36" ry="15"/>' +
-      '<circle cx="-19" cy="1" r="16"/>' +
-      '<circle cx="9" cy="-7" r="21"/>' +
-      '<circle cx="33" cy="4" r="14"/>' +
-      '</g>';
+    const shape = '<ellipse cx="0" cy="12" rx="36" ry="15"/><circle cx="-19" cy="1" r="16"/><circle cx="9" cy="-7" r="21"/><circle cx="33" cy="4" r="14"/>';
+    // An enlarged solid silhouette drawn first, in the same overlapping shapes,
+    // so it has no internal seams of its own — the normal-size cloud on top
+    // then covers all of it except a thin ring at the true outer edge. This
+    // guarantees visibility against any sky color without the seam artifacts
+    // a per-shape stroke would leave where the ellipse and circles overlap.
+    return '<g transform="translate('+cx+','+cy+') scale('+(scale*1.055)+')" fill="rgba(22,35,62,0.22)">' + shape + '</g>' +
+      '<g transform="translate('+cx+','+cy+') scale('+scale+')" fill="'+color+'">' + shape + '</g>';
   }
 
   function sunGroup(cx, cy, r, color, rays){
@@ -1531,18 +1533,19 @@
       s += '<g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.75">' +
         '<line x1="135" y1="28" x2="270" y2="28"/><line x1="150" y1="50" x2="275" y2="50"/><line x1="160" y1="72" x2="279" y2="72"/></g>';
     } else if (bucket === 'rain'){
-      s += cloudGroup(172, 46, 1.12, cloudMid) + cloudGroup(243, 70, 0.72, cloudLight);
+      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudLight);
       s += '<g stroke="'+ink+'" stroke-width="2.4" stroke-linecap="round" opacity="0.5">' +
-        '<line x1="171" y1="88" x2="163" y2="105"/><line x1="195" y1="91" x2="187" y2="111"/>' +
-        '<line x1="219" y1="88" x2="211" y2="105"/><line x1="242" y1="93" x2="234" y2="113"/></g>';
+        '<line x1="150" y1="82" x2="143" y2="98"/><line x1="170" y1="82" x2="163" y2="98"/>' +
+        '<line x1="190" y1="82" x2="183" y2="98"/>' +
+        '<line x1="215" y1="118" x2="208" y2="134"/><line x1="240" y1="118" x2="233" y2="134"/></g>';
     } else if (bucket === 'snow'){
-      s += cloudGroup(172, 46, 1.12, cloudMid) + cloudGroup(243, 70, 0.72, cloudLight);
+      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudLight);
       s += '<g fill="'+ink+'" opacity="0.5">' +
-        '<circle cx="171" cy="98" r="2.2"/><circle cx="196" cy="104" r="2.2"/>' +
-        '<circle cx="220" cy="96" r="2.2"/><circle cx="242" cy="105" r="2.2"/></g>';
+        '<circle cx="150" cy="88" r="2.2"/><circle cx="170" cy="95" r="2.2"/><circle cx="190" cy="90" r="2.2"/>' +
+        '<circle cx="215" cy="123" r="2.2"/><circle cx="240" cy="129" r="2.2"/></g>';
     } else if (bucket === 'storm'){
-      s += cloudGroup(172, 46, 1.12, cloudDark) + cloudGroup(243, 70, 0.72, cloudMid);
-      s += '<path d="M182,80 L168,103 L180,103 L166,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += cloudGroup(170, 44, 1.15, cloudDark) + cloudGroup(233, 86, 0.94, cloudMid);
+      s += '<path d="M180,80 L166,103 L178,103 L164,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
     const hasHighLow = todayHigh != null && todayLow != null;
@@ -1599,18 +1602,19 @@
       s += '<g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.75">' +
         '<line x1="135" y1="28" x2="270" y2="28"/><line x1="150" y1="50" x2="275" y2="50"/><line x1="160" y1="72" x2="279" y2="72"/></g>';
     } else if (bucket === 'rain'){
-      s += cloudGroup(172, 46, 1.12, cloudMid) + cloudGroup(243, 70, 0.72, cloudLight);
+      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudLight);
       s += '<g stroke="'+ink+'" stroke-width="2.4" stroke-linecap="round" opacity="0.5">' +
-        '<line x1="171" y1="88" x2="163" y2="105"/><line x1="195" y1="91" x2="187" y2="111"/>' +
-        '<line x1="219" y1="88" x2="211" y2="105"/><line x1="242" y1="93" x2="234" y2="113"/></g>';
+        '<line x1="150" y1="82" x2="143" y2="98"/><line x1="170" y1="82" x2="163" y2="98"/>' +
+        '<line x1="190" y1="82" x2="183" y2="98"/>' +
+        '<line x1="215" y1="118" x2="208" y2="134"/><line x1="240" y1="118" x2="233" y2="134"/></g>';
     } else if (bucket === 'snow'){
-      s += cloudGroup(172, 46, 1.12, cloudMid) + cloudGroup(243, 70, 0.72, cloudLight);
+      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudLight);
       s += '<g fill="'+ink+'" opacity="0.5">' +
-        '<circle cx="171" cy="98" r="2.2"/><circle cx="196" cy="104" r="2.2"/>' +
-        '<circle cx="220" cy="96" r="2.2"/><circle cx="242" cy="105" r="2.2"/></g>';
+        '<circle cx="150" cy="88" r="2.2"/><circle cx="170" cy="95" r="2.2"/><circle cx="190" cy="90" r="2.2"/>' +
+        '<circle cx="215" cy="123" r="2.2"/><circle cx="240" cy="129" r="2.2"/></g>';
     } else if (bucket === 'storm'){
-      s += cloudGroup(172, 46, 1.12, cloudDark) + cloudGroup(243, 70, 0.72, cloudMid);
-      s += '<path d="M182,80 L168,103 L180,103 L166,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += cloudGroup(170, 44, 1.15, cloudDark) + cloudGroup(233, 86, 0.94, cloudMid);
+      s += '<path d="M180,80 L166,103 L178,103 L164,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
     // 2 lines: the high/low number, then date and condition combined on
