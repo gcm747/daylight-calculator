@@ -337,6 +337,20 @@
     color:var(--slate);
     font-style:italic;
   }
+  .fav-move-group{
+    flex:none;
+    display:flex;
+    flex-direction:column;
+  }
+  .fav-move{
+    font-size:11px;
+    line-height:1;
+    color:var(--slate);
+    padding:4px 6px;
+    cursor:pointer;
+  }
+  .fav-move:hover:not(:disabled){color:var(--ink);}
+  .fav-move:disabled{opacity:0.25; cursor:default;}
   .fav-remove{
     flex:none;
     font-size:14px;
@@ -1246,6 +1260,15 @@
     renderFavorites();
   }
 
+  function moveFavorite(index, direction){
+    const favs = loadFavorites();
+    const target = index + direction;
+    if (target < 0 || target >= favs.length) return;
+    [favs[index], favs[target]] = [favs[target], favs[index]];
+    saveFavorites(favs);
+    renderFavorites();
+  }
+
   function saveCurrentAsFavorite(){
     const favs = loadFavorites();
     if (favs.length >= MAX_FAVORITES) return;
@@ -1268,6 +1291,29 @@
     favs.forEach((f, i) => {
       const li = document.createElement('li');
       li.className = 'fav-row';
+
+      const moveGroup = document.createElement('span');
+      moveGroup.className = 'fav-move-group';
+
+      const upBtn = document.createElement('button');
+      upBtn.type = 'button';
+      upBtn.className = 'fav-move';
+      upBtn.setAttribute('aria-label', 'Move ' + f.name + ' up');
+      upBtn.textContent = '\u2191';
+      upBtn.disabled = i === 0;
+      upBtn.addEventListener('click', () => moveFavorite(i, -1));
+      moveGroup.appendChild(upBtn);
+
+      const downBtn = document.createElement('button');
+      downBtn.type = 'button';
+      downBtn.className = 'fav-move';
+      downBtn.setAttribute('aria-label', 'Move ' + f.name + ' down');
+      downBtn.textContent = '\u2193';
+      downBtn.disabled = i === favs.length - 1;
+      downBtn.addEventListener('click', () => moveFavorite(i, 1));
+      moveGroup.appendChild(downBtn);
+
+      li.appendChild(moveGroup);
 
       const nameBtn = document.createElement('button');
       nameBtn.type = 'button';
