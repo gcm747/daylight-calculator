@@ -948,13 +948,23 @@
     const cumVerb = pos.growing ? "You've gained" : "You've lost";
     $('cumulative-line').textContent = cumVerb + ' ' + fmtDuration(cumSec) + ' of daylight since the ' + pos.startLabel + ' solstice.';
 
+    const isSouthernHemi = lat < 0;
+    const isMarchEquinox = pos.equinoxLabel.indexOf('March') !== -1;
+    // At the March equinox the Northern Hemisphere tips into longer days
+    // while the Southern Hemisphere tips into shorter ones; at the
+    // September equinox it's the reverse.
+    const youGainHere = isMarchEquinox ? !isSouthernHemi : isSouthernHemi;
+    const otherHemi = isSouthernHemi ? 'Northern' : 'Southern';
+    const otherVerb = youGainHere ? 'loses' : 'gains';
+    const youVerb = youGainHere ? 'gaining' : 'losing';
+
     let eqText;
     if (pos.daysToEquinox > 0){
-      eqText = pos.daysToEquinox + (pos.daysToEquinox===1?' day':' days') + ' until the ' + pos.equinoxLabel + ' — the midpoint, when day and night are equal.';
+      eqText = pos.daysToEquinox + (pos.daysToEquinox===1?' day':' days') + ' until the ' + pos.equinoxLabel + ' — after that, you\u2019ll be ' + youVerb + ' daylight while the ' + otherHemi + ' Hemisphere ' + otherVerb + ' it.';
     } else if (pos.daysToEquinox < 0){
-      eqText = Math.abs(pos.daysToEquinox) + (pos.daysToEquinox===-1?' day':' days') + ' since the ' + pos.equinoxLabel + '.';
+      eqText = Math.abs(pos.daysToEquinox) + (pos.daysToEquinox===-1?' day':' days') + ' since the ' + pos.equinoxLabel + ' — you\u2019re ' + youVerb + ' daylight while the ' + otherHemi + ' Hemisphere ' + otherVerb + ' it.';
     } else {
-      eqText = 'Today is the ' + pos.equinoxLabel + ' — day and night are equal.';
+      eqText = 'Today is the ' + pos.equinoxLabel + ' — day and night are equal, and from here you\u2019ll be ' + youVerb + ' daylight while the ' + otherHemi + ' Hemisphere ' + otherVerb + ' it.';
     }
     $('equinox-line').textContent = eqText;
 
