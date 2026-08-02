@@ -1543,11 +1543,11 @@
       if (phase === 'night') s += '<circle cx="175" cy="30" r="1.4" fill="#FFF"/><circle cx="263" cy="72" r="1" fill="#FFF"/><circle cx="195" cy="82" r="1" fill="#FFF"/>';
     } else if (bucket === 'mostlyClear'){
       s += celestial(37);
-      const mcCloud = !isTwilight ? [213, celestialCy + 48, 0.9] : (nearHorizonGlobal ? [275, 118, 0.45] : [260, 135, 0.38]);
+      const mcCloud = !isTwilight ? [213, celestialCy + 48, 0.9] : (nearHorizonGlobal ? [225, 76, 0.65] : [225, 105, 0.55]);
       s += cloudGroup(mcCloud[0], mcCloud[1], mcCloud[2], cloudLight);
     } else if (bucket === 'partlyCloudy'){
       s += celestial(35);
-      const pcCloud = !isTwilight ? [205, celestialCy + 32, 0.75] : (nearHorizonGlobal ? [270, 125, 0.38] : [258, 140, 0.32]);
+      const pcCloud = !isTwilight ? [205, celestialCy + 32, 0.75] : (nearHorizonGlobal ? [225, 80, 0.55] : [225, 109, 0.48]);
       s += cloudGroup(pcCloud[0], pcCloud[1], pcCloud[2], cloudLight);
     } else if (bucket === 'overcast'){
       s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudMid);
