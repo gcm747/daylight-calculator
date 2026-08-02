@@ -1295,15 +1295,34 @@
     if (today.civilState === 'never-below') return { visual:'day', phaseKey:'day' };
     if (today.civilState === 'never-above') return { visual:'night', phaseKey:'night' };
 
-    // Convert solar noon into a real timestamp on the correct calendar
-    // date, then compare actual timestamps — this is what avoids the whole
-    // "which UTC day" ambiguity that caused the bug, rather than comparing
-    // bare hour-of-day numbers that have lost track of which day they're on.
-    let noonH = today.solarNoonUTC, noonDayOffset = 0;
-    if (noonH < 0) { noonDayOffset = -1; noonH += 24; }
-    if (noonH >= 24) { noonDayOffset = 1; noonH -= 24; }
-    const noonHH = Math.floor(noonH), noonMM = Math.round((noonH - noonHH) * 60);
-    const noonInstant = new Date(Date.UTC(localY, localM - 1, localD + noonDayOffset, noonHH, noonMM));
+    // Convert solar noon into a real timestamp, then compare actual
+    // timestamps — this is what avoids "which UTC day" ambiguity. Tries
+    // the local calendar date, the day before, and the day after, and
+    // picks whichever candidate solar noon is actually closest to right
+    // now. A narrower ±1-day assumption broke for places like Samoa,
+    // where the political clock is a full ~24 hours removed from what
+    // the location's real longitude alone would suggest (Samoa moved
+    // its timezone from UTC-11 to UTC+13 in 2011, skipping a calendar
+    // day, to align with its Pacific neighbours rather than its
+    // geography) — combining that political date with a purely
+    // astronomical solar-noon time could land on the wrong day entirely
+    // for locations with that large a mismatch, flipping day into night.
+    function noonInstantFor(y, m, d){
+      const daily = (y === localY && m === localM && d === localD) ? today : computeDaily(y, m, d, lat, lon);
+      let noonH = daily.solarNoonUTC;
+      const hh = Math.floor(((noonH % 24) + 24) % 24);
+      const mm = Math.round(((((noonH % 24) + 24) % 24) - hh) * 60);
+      const dayShift = Math.floor(noonH / 24);
+      return new Date(Date.UTC(y, m - 1, d + dayShift, hh, mm));
+    }
+    const localDateObj = new Date(Date.UTC(localY, localM - 1, localD));
+    const candidates = [-1, 0, 1].map(offset => {
+      const d2 = new Date(localDateObj.getTime() + offset * 86400000);
+      return noonInstantFor(d2.getUTCFullYear(), d2.getUTCMonth() + 1, d2.getUTCDate());
+    });
+    const noonInstant = candidates.reduce((closest, cand) =>
+      Math.abs(cand.getTime() - nowInstant.getTime()) < Math.abs(closest.getTime() - nowInstant.getTime()) ? cand : closest
+    );
     const hoursFromNoon = (nowInstant.getTime() - noonInstant.getTime()) / 3600000;
 
     const latRad = toRad(lat);
@@ -1507,6 +1526,13 @@
       if (moonInfo) return moonPhaseShape(sunCx, sunCy, r, moonInfo.illumination, moonInfo.waxing, moon, moonShadow, isSouthern);
       return moonGroup(sunCx, sunCy, r, moon); // fallback if phase info isn't available for some reason
     }
+    // Where the sun/moon actually sits for the current phase — used to keep
+    // the accompanying cloud positioned relative to it (below and to the
+    // side), rather than at a fixed spot that only looked right for Day.
+    // Twilight uses a smaller offset than Day, since there's less vertical
+    // room before the horizon sun is already low in the card.
+    const celestialCy = isTwilight ? ((phaseKey === 'sunrise' || phaseKey === 'sunset') ? 108 : 130) : sunCy;
+    const nearHorizonGlobal = (phaseKey === 'sunrise' || phaseKey === 'sunset');
 
     let s = '<defs><linearGradient id="wxsky" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0%" stop-color="'+c1+'"/><stop offset="100%" stop-color="'+c2+'"/></linearGradient></defs>';
@@ -1517,10 +1543,12 @@
       if (phase === 'night') s += '<circle cx="175" cy="30" r="1.4" fill="#FFF"/><circle cx="263" cy="72" r="1" fill="#FFF"/><circle cx="195" cy="82" r="1" fill="#FFF"/>';
     } else if (bucket === 'mostlyClear'){
       s += celestial(37);
-      s += cloudGroup(213, 100, 0.9, cloudLight);
+      const mcCloud = !isTwilight ? [213, celestialCy + 48, 0.9] : (nearHorizonGlobal ? [275, 118, 0.45] : [260, 135, 0.38]);
+      s += cloudGroup(mcCloud[0], mcCloud[1], mcCloud[2], cloudLight);
     } else if (bucket === 'partlyCloudy'){
       s += celestial(35);
-      s += cloudGroup(205, 84, 1.02, cloudLight);
+      const pcCloud = !isTwilight ? [205, celestialCy + 32, 0.75] : (nearHorizonGlobal ? [270, 125, 0.38] : [258, 140, 0.32]);
+      s += cloudGroup(pcCloud[0], pcCloud[1], pcCloud[2], cloudLight);
     } else if (bucket === 'overcast'){
       s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudMid);
     } else if (bucket === 'fog'){
