@@ -124,15 +124,13 @@
     color:#FFFFFF;
     opacity:1;
   }
-  .temp-unit-toggle{
-    position:absolute;
-    z-index:5;
-    top:8px;
-    left:8px;
+  .svg-unit-toggle{
     display:flex;
+    width:fit-content;
     background:rgba(255,255,255,0.55);
     border-radius:14px;
     overflow:hidden;
+    font-family:'Space Grotesk', sans-serif;
   }
   .unit-btn{
     border:none;
@@ -549,10 +547,6 @@
     <h1>Daylight Calculator</h1>
     <p class="subtitle">Enter any place and date to see sunrise, sunset and twilight, how long the day is, and where you sit between the shortest and longest day of the year.</p>
     <div class="weather-hero" id="weather-hero" hidden>
-      <div class="temp-unit-toggle" id="temp-unit-toggle" role="group" aria-label="Temperature unit">
-        <button type="button" class="unit-btn" data-unit="C">&deg;C</button>
-        <button type="button" class="unit-btn" data-unit="F">&deg;F</button>
-      </div>
       <div class="weather-track" id="weather-track">
         <svg id="weather-scene" viewBox="0 0 340 180" preserveAspectRatio="xMidYMid slice"></svg>
       </div>
@@ -1696,12 +1690,17 @@
     // grouped unit; description follows at the fixed minimum Y it needs to
     // stay clear of any icon (measured worst case: 157.9px), so it never
     // needs to wrap or truncate.
-    s += '<text x="24" y="'+(hasHighLow?123:145)+'" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+'</text>';
+    s += '<text x="25" y="'+(hasHighLow?123:145)+'" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+'</text>';
     if (hasHighLow){
-      s += '<text x="26" y="148" font-family="\'Space Grotesk\', sans-serif" font-size="15" font-weight="500" fill="'+ink+'" opacity="0.6">H:'+Math.round(convertTemp(todayHigh))+'°  L:'+Math.round(convertTemp(todayLow))+'°</text>';
+      s += '<text x="25" y="148" font-family="\'Space Grotesk\', sans-serif" font-size="15" font-weight="500" fill="'+ink+'" opacity="0.6">H:'+Math.round(convertTemp(todayHigh))+'°  L:'+Math.round(convertTemp(todayLow))+'°</text>';
     }
     const descLine = wrapToWidth(descStr, 305, 13, "'Space Grotesk', sans-serif", 1)[0];
-    s += '<text x="26" y="'+(hasHighLow?168:170)+'" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+descLine+'</text>';
+    s += '<text x="25" y="'+(hasHighLow?168:170)+'" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+descLine+'</text>';
+    s += '<foreignObject x="25" y="8" width="72" height="24">' +
+      '<div xmlns="http://www.w3.org/1999/xhtml" class="svg-unit-toggle" id="temp-unit-toggle" role="group" aria-label="Temperature unit">' +
+      '<button type="button" class="unit-btn" data-unit="C" aria-pressed="'+(tempUnit==='C')+'">\u00B0C</button>' +
+      '<button type="button" class="unit-btn" data-unit="F" aria-pressed="'+(tempUnit==='F')+'">\u00B0F</button>' +
+      '</div></foreignObject>';
     return s;
   }
 
@@ -1764,10 +1763,10 @@
     // one line — positioned below where any forecast icon can reach
     // (measured worst case: 130px), so it can safely use nearly the full
     // card width and never needs to wrap or truncate.
-    s += '<text x="24" y="145" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
+    s += '<text x="25" y="145" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
       Math.round(convertTemp(tempMax)) + '°<tspan font-size="20" opacity="0.55" dx="8">/ ' + Math.round(convertTemp(tempMin)) + '°</tspan></text>';
     const fcLine = wrapToWidth(dateLabel+' · '+weatherDescription(code), 300, 13, "'Space Grotesk', sans-serif", 1)[0];
-    s += '<text x="26" y="168" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+fcLine+'</text>';
+    s += '<text x="25" y="168" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+fcLine+'</text>';
     return s;
   }
 
@@ -2176,20 +2175,16 @@
   $('weather-prev').addEventListener('keydown', e => navKeyHandler(e, -1));
   $('weather-next').addEventListener('keydown', e => navKeyHandler(e, 1));
 
-  function updateUnitToggleUI(){
-    document.querySelectorAll('.unit-btn').forEach(btn => {
-      btn.setAttribute('aria-pressed', btn.dataset.unit === tempUnit ? 'true' : 'false');
-    });
-  }
-  updateUnitToggleUI();
-  document.querySelectorAll('.unit-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.dataset.unit === tempUnit) return;
-      tempUnit = btn.dataset.unit;
-      localStorage.setItem('daylightTempUnit', tempUnit);
-      updateUnitToggleUI();
-      renderWeatherFromCache();
-    });
+  // The unit buttons now live inside the SVG and get fully regenerated on
+  // every render, so individual listeners on them would be destroyed each
+  // time. Delegating from the stable weather-hero container instead means
+  // this works regardless of how many times the buttons get recreated.
+  $('weather-hero').addEventListener('click', e => {
+    const btn = e.target.closest('.unit-btn');
+    if (!btn || btn.dataset.unit === tempUnit) return;
+    tempUnit = btn.dataset.unit;
+    localStorage.setItem('daylightTempUnit', tempUnit);
+    renderWeatherFromCache();
   });
 
   function updateFormatToggleUI(){
