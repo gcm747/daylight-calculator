@@ -1759,6 +1759,10 @@
       s += '<path d="M161,80 L147,103 L159,103 L145,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
+    // High/low uses the same H:/L: labeled notation as the live view, so
+    // the two card types read as the same visual language — but sized as
+    // the headline here, since forecast cards have no current temp to
+    // anchor them the way the live view does; the H/L has to do that job.
     // 2 lines: the high/low number, then date and condition combined on
     // one line — positioned below where any forecast icon can reach
     // (measured worst case: 130px), so it can safely use nearly the full
