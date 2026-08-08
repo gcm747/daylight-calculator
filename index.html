@@ -1622,7 +1622,7 @@
     };
     const skyEntry = SKY[bucket];
     const [c1, c2] = Array.isArray(skyEntry) ? skyEntry : skyEntry[phase];
-    const sunCx = 225, sunCy = 52;
+    const sunCx = 206, sunCy = 52;
 
     function celestial(r){
       if (isTwilight){
@@ -1655,34 +1655,34 @@
 
     if (bucket === 'clear'){
       s += celestial(37);
-      if (phase === 'night') s += '<circle cx="175" cy="30" r="1.4" fill="#FFF"/><circle cx="263" cy="72" r="1" fill="#FFF"/><circle cx="195" cy="82" r="1" fill="#FFF"/>';
+      if (phase === 'night') s += '<circle cx="168" cy="30" r="1.4" fill="#FFF"/><circle cx="256" cy="72" r="1" fill="#FFF"/><circle cx="188" cy="82" r="1" fill="#FFF"/>';
     } else if (bucket === 'mostlyClear'){
       s += celestial(37);
-      const mcCloud = !isTwilight ? [213, celestialCy + 48, 0.9] : (nearHorizonGlobal ? [225, 76, 0.65] : [225, 105, 0.55]);
+      const mcCloud = !isTwilight ? [206, celestialCy + 48, 0.9] : (nearHorizonGlobal ? [218, 76, 0.65] : [218, 105, 0.55]);
       s += cloudGroup(mcCloud[0], mcCloud[1], mcCloud[2], cloudLight);
     } else if (bucket === 'partlyCloudy'){
       s += celestial(35);
-      const pcCloud = !isTwilight ? [205, celestialCy + 32, 0.75] : (nearHorizonGlobal ? [225, 80, 0.55] : [225, 109, 0.48]);
+      const pcCloud = !isTwilight ? [198, celestialCy + 32, 0.75] : (nearHorizonGlobal ? [218, 80, 0.55] : [218, 109, 0.48]);
       s += cloudGroup(pcCloud[0], pcCloud[1], pcCloud[2], cloudLight);
     } else if (bucket === 'overcast'){
-      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudMid);
+      s += cloudGroup(151, 44, 1.15, cloudMid) + cloudGroup(214, 86, 0.94, cloudMid);
     } else if (bucket === 'fog'){
       s += '<g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.75">' +
-        '<line x1="135" y1="28" x2="270" y2="28"/><line x1="150" y1="50" x2="275" y2="50"/><line x1="160" y1="72" x2="279" y2="72"/></g>';
+        '<line x1="116" y1="28" x2="251" y2="28"/><line x1="131" y1="50" x2="256" y2="50"/><line x1="141" y1="72" x2="260" y2="72"/></g>';
     } else if (bucket === 'rain'){
-      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudLight);
+      s += cloudGroup(151, 44, 1.15, cloudMid) + cloudGroup(214, 86, 0.94, cloudLight);
       s += '<g stroke="'+ink+'" stroke-width="2.4" stroke-linecap="round" opacity="0.5">' +
-        '<line x1="150" y1="82" x2="143" y2="98"/><line x1="170" y1="82" x2="163" y2="98"/>' +
-        '<line x1="190" y1="82" x2="183" y2="98"/>' +
-        '<line x1="215" y1="118" x2="208" y2="134"/><line x1="240" y1="118" x2="233" y2="134"/></g>';
+        '<line x1="131" y1="82" x2="124" y2="98"/><line x1="151" y1="82" x2="144" y2="98"/>' +
+        '<line x1="171" y1="82" x2="164" y2="98"/>' +
+        '<line x1="196" y1="118" x2="189" y2="134"/><line x1="221" y1="118" x2="214" y2="134"/></g>';
     } else if (bucket === 'snow'){
-      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudLight);
+      s += cloudGroup(151, 44, 1.15, cloudMid) + cloudGroup(214, 86, 0.94, cloudLight);
       s += '<g fill="'+ink+'" opacity="0.5">' +
-        '<circle cx="150" cy="88" r="2.2"/><circle cx="170" cy="95" r="2.2"/><circle cx="190" cy="90" r="2.2"/>' +
-        '<circle cx="215" cy="123" r="2.2"/><circle cx="240" cy="129" r="2.2"/></g>';
+        '<circle cx="131" cy="88" r="2.2"/><circle cx="151" cy="95" r="2.2"/><circle cx="171" cy="90" r="2.2"/>' +
+        '<circle cx="196" cy="123" r="2.2"/><circle cx="221" cy="129" r="2.2"/></g>';
     } else if (bucket === 'storm'){
-      s += cloudGroup(170, 44, 1.15, cloudDark) + cloudGroup(233, 86, 0.94, cloudMid);
-      s += '<path d="M180,80 L166,103 L178,103 L164,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += cloudGroup(151, 44, 1.15, cloudDark) + cloudGroup(214, 86, 0.94, cloudMid);
+      s += '<path d="M161,80 L147,103 L159,103 L145,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
     const hasHighLow = todayHigh != null && todayLow != null;
@@ -1690,13 +1690,13 @@
     // grouped unit; description follows at the fixed minimum Y it needs to
     // stay clear of any icon (measured worst case: 157.9px), so it never
     // needs to wrap or truncate.
-    s += '<text x="8" y="'+(hasHighLow?123:145)+'" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+'</text>';
+    s += '<text x="16" y="'+(hasHighLow?123:145)+'" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="38" fill="'+ink+'">'+tempStr+'</text>';
     if (hasHighLow){
-      s += '<text x="8" y="148" font-family="\'Space Grotesk\', sans-serif" font-size="15" font-weight="500" fill="'+ink+'" opacity="0.6">H:'+Math.round(convertTemp(todayHigh))+'°  L:'+Math.round(convertTemp(todayLow))+'°</text>';
+      s += '<text x="16" y="148" font-family="\'Space Grotesk\', sans-serif" font-size="15" font-weight="500" fill="'+ink+'" opacity="0.6">H:'+Math.round(convertTemp(todayHigh))+'°  L:'+Math.round(convertTemp(todayLow))+'°</text>';
     }
     const descLine = wrapToWidth(descStr, 305, 13, "'Space Grotesk', sans-serif", 1)[0];
-    s += '<text x="8" y="'+(hasHighLow?168:170)+'" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+descLine+'</text>';
-    s += '<foreignObject x="8" y="8" width="72" height="24">' +
+    s += '<text x="16" y="'+(hasHighLow?168:170)+'" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+descLine+'</text>';
+    s += '<foreignObject x="16" y="8" width="72" height="24">' +
       '<div xmlns="http://www.w3.org/1999/xhtml" class="svg-unit-toggle" id="temp-unit-toggle" role="group" aria-label="Temperature unit">' +
       '<button type="button" class="unit-btn" data-unit="C" aria-pressed="'+(tempUnit==='C')+'">\u00B0C</button>' +
       '<button type="button" class="unit-btn" data-unit="F" aria-pressed="'+(tempUnit==='F')+'">\u00B0F</button>' +
@@ -1724,7 +1724,7 @@
       snow: ['#F4F8FB','#DCE7EF'], storm: ['#CDD1DC','#7C8398'],
     };
     const [c1, c2] = SKY_DAY[bucket];
-    const sunCx = 225, sunCy = 52;
+    const sunCx = 213, sunCy = 52;
 
     let s = '<defs><linearGradient id="fcsky'+slideIndex+'" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0%" stop-color="'+c1+'"/><stop offset="100%" stop-color="'+c2+'"/></linearGradient></defs>';
@@ -1739,34 +1739,34 @@
       s += sunGroup(sunCx, sunCy, 35, sun, true);
       s += cloudGroup(205, 84, 1.02, cloudLight);
     } else if (bucket === 'overcast'){
-      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudMid);
+      s += cloudGroup(158, 44, 1.15, cloudMid) + cloudGroup(221, 86, 0.94, cloudMid);
     } else if (bucket === 'fog'){
       s += '<g stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.75">' +
-        '<line x1="135" y1="28" x2="270" y2="28"/><line x1="150" y1="50" x2="275" y2="50"/><line x1="160" y1="72" x2="279" y2="72"/></g>';
+        '<line x1="123" y1="28" x2="258" y2="28"/><line x1="138" y1="50" x2="263" y2="50"/><line x1="148" y1="72" x2="267" y2="72"/></g>';
     } else if (bucket === 'rain'){
-      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudLight);
+      s += cloudGroup(158, 44, 1.15, cloudMid) + cloudGroup(221, 86, 0.94, cloudLight);
       s += '<g stroke="'+ink+'" stroke-width="2.4" stroke-linecap="round" opacity="0.5">' +
-        '<line x1="150" y1="82" x2="143" y2="98"/><line x1="170" y1="82" x2="163" y2="98"/>' +
-        '<line x1="190" y1="82" x2="183" y2="98"/>' +
-        '<line x1="215" y1="118" x2="208" y2="134"/><line x1="240" y1="118" x2="233" y2="134"/></g>';
+        '<line x1="138" y1="82" x2="131" y2="98"/><line x1="158" y1="82" x2="151" y2="98"/>' +
+        '<line x1="178" y1="82" x2="171" y2="98"/>' +
+        '<line x1="203" y1="118" x2="196" y2="134"/><line x1="228" y1="118" x2="221" y2="134"/></g>';
     } else if (bucket === 'snow'){
-      s += cloudGroup(170, 44, 1.15, cloudMid) + cloudGroup(233, 86, 0.94, cloudLight);
+      s += cloudGroup(158, 44, 1.15, cloudMid) + cloudGroup(221, 86, 0.94, cloudLight);
       s += '<g fill="'+ink+'" opacity="0.5">' +
-        '<circle cx="150" cy="88" r="2.2"/><circle cx="170" cy="95" r="2.2"/><circle cx="190" cy="90" r="2.2"/>' +
-        '<circle cx="215" cy="123" r="2.2"/><circle cx="240" cy="129" r="2.2"/></g>';
+        '<circle cx="138" cy="88" r="2.2"/><circle cx="158" cy="95" r="2.2"/><circle cx="178" cy="90" r="2.2"/>' +
+        '<circle cx="203" cy="123" r="2.2"/><circle cx="228" cy="129" r="2.2"/></g>';
     } else if (bucket === 'storm'){
-      s += cloudGroup(170, 44, 1.15, cloudDark) + cloudGroup(233, 86, 0.94, cloudMid);
-      s += '<path d="M180,80 L166,103 L178,103 L164,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+      s += cloudGroup(158, 44, 1.15, cloudDark) + cloudGroup(221, 86, 0.94, cloudMid);
+      s += '<path d="M168,80 L154,103 L166,103 L152,126" fill="none" stroke="'+sun+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
     }
 
     // 2 lines: the high/low number, then date and condition combined on
     // one line — positioned below where any forecast icon can reach
     // (measured worst case: 130px), so it can safely use nearly the full
     // card width and never needs to wrap or truncate.
-    s += '<text x="8" y="145" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
+    s += '<text x="16" y="145" font-family="\'Bricolage Grotesque\', sans-serif" font-weight="700" font-size="34" fill="'+ink+'">' +
       Math.round(convertTemp(tempMax)) + '°<tspan font-size="20" opacity="0.55" dx="8">/ ' + Math.round(convertTemp(tempMin)) + '°</tspan></text>';
     const fcLine = wrapToWidth(dateLabel+' · '+weatherDescription(code), 300, 13, "'Space Grotesk', sans-serif", 1)[0];
-    s += '<text x="8" y="168" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+fcLine+'</text>';
+    s += '<text x="16" y="168" font-family="\'Space Grotesk\', sans-serif" font-size="13" fill="'+ink+'" opacity="0.75">'+fcLine+'</text>';
     return s;
   }
 
